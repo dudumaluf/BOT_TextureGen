@@ -10,10 +10,10 @@ export default function LoadingOverlay() {
   }
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="flex flex-col items-center">
-        <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-white border-t-transparent"></div>
-        <p className="mt-4 text-white">Processing...</p>
+    <div className="absolute top-4 left-4 z-20 pointer-events-none">
+      <div className="bg-black/80 text-white px-3 py-2 rounded-lg backdrop-blur-sm border border-white/20 flex items-center gap-2">
+        <div className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-t-transparent"></div>
+        <span className="text-sm">Processing...</span>
       </div>
     </div>
   );

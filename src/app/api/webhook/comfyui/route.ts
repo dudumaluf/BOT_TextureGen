@@ -48,69 +48,76 @@ export async function POST(request: Request) {
       // completed_at: new Date().toISOString(), // Column doesn't exist yet
     };
 
-    // Download from ComfyUI and upload to Supabase Storage
-    for (const [textureType, comfyUrl] of Object.entries(textures)) {
-      if (comfyUrl && typeof comfyUrl === 'string') {
-        try {
-          console.log(`Webhook: Downloading ${textureType} from ComfyUI: ${comfyUrl}`);
-          
-          // Download from ComfyUI (force IPv4 by replacing localhost)
-          const ipv4Url = comfyUrl.replace('localhost', '127.0.0.1');
-          console.log(`Webhook: Downloading from IPv4 URL: ${ipv4Url}`);
-          const comfyResponse = await fetch(ipv4Url);
-          if (!comfyResponse.ok) {
-            throw new Error(`Failed to download ${textureType}: ${comfyResponse.status}`);
-          }
-          
-          const imageBuffer = await comfyResponse.arrayBuffer();
-          const uint8Array = new Uint8Array(imageBuffer);
-          
-          // Upload to Supabase Storage
-          const fileName = `${generationId}_${textureType}.png`;
-          const storagePath = `generations/${generationId}/${fileName}`;
-          
-          const { error: uploadError } = await supabase.storage
-            .from('generated_textures')
-            .upload(storagePath, uint8Array, {
-              contentType: 'image/png',
-              upsert: true
-            });
-          
-          if (uploadError) {
-            console.error(`Webhook: Upload error for ${textureType}:`, uploadError);
+    // Option to disable cloud upload for development (set to false to skip upload attempts)
+    const enableCloudUpload = true; // Re-enabled after fixing RLS policies
+    
+    if (enableCloudUpload) {
+      // Download from ComfyUI and upload to Supabase Storage
+      for (const [textureType, comfyUrl] of Object.entries(textures)) {
+        if (comfyUrl && typeof comfyUrl === 'string') {
+          try {
+            console.log(`Webhook: Downloading ${textureType} from ComfyUI: ${comfyUrl}`);
+            
+            // Download from ComfyUI (force IPv4 by replacing localhost)
+            const ipv4Url = comfyUrl.replace('localhost', '127.0.0.1');
+            console.log(`Webhook: Downloading from IPv4 URL: ${ipv4Url}`);
+            const comfyResponse = await fetch(ipv4Url);
+            if (!comfyResponse.ok) {
+              throw new Error(`Failed to download ${textureType}: ${comfyResponse.status}`);
+            }
+            
+            const imageBuffer = await comfyResponse.arrayBuffer();
+            const uint8Array = new Uint8Array(imageBuffer);
+            
+            // Upload to Supabase Storage
+            const fileName = `${generationId}_${textureType}.png`;
+            const storagePath = `generations/${generationId}/${fileName}`;
+            
+            const { error: uploadError } = await supabase.storage
+              .from('generated_textures')
+              .upload(storagePath, uint8Array, {
+                contentType: 'image/png',
+                upsert: true
+              });
+            
+            if (uploadError) {
+              console.error(`Webhook: Upload error for ${textureType}:`, uploadError);
+              // Use ComfyUI URL as fallback
+              updateData[`${textureType}_storage_path`] = comfyUrl;
+            } else {
+              // Get public URL from Supabase
+              const { data: { publicUrl } } = supabase.storage
+                .from('generated_textures')
+                .getPublicUrl(storagePath);
+              
+              updateData[`${textureType}_storage_path`] = publicUrl;
+              console.log(`Webhook: Uploaded ${textureType} to Supabase: ${publicUrl}`);
+            }
+            
+          } catch (error) {
+            console.error(`Webhook: Error processing ${textureType}:`, error);
             // Use ComfyUI URL as fallback
             updateData[`${textureType}_storage_path`] = comfyUrl;
-          } else {
-            // Get public URL from Supabase
-            const { data: { publicUrl } } = supabase.storage
-              .from('generated_textures')
-              .getPublicUrl(storagePath);
-            
-            updateData[`${textureType}_storage_path`] = publicUrl;
-            console.log(`Webhook: Uploaded ${textureType} to Supabase: ${publicUrl}`);
+            console.log(`Webhook: Using ComfyUI fallback URL for ${textureType}: ${comfyUrl}`);
           }
-          
-        } catch (error) {
-          console.error(`Webhook: Error processing ${textureType}:`, error);
-          // Use ComfyUI URL as fallback
+        }
+      }
+    } else {
+      // Use ComfyUI URLs directly (faster, no upload overhead)
+      console.log('Webhook: Using ComfyUI URLs directly (cloud upload disabled)');
+      for (const [textureType, comfyUrl] of Object.entries(textures)) {
+        if (comfyUrl && typeof comfyUrl === 'string') {
           updateData[`${textureType}_storage_path`] = comfyUrl;
-          console.log(`Webhook: Using ComfyUI fallback URL for ${textureType}: ${comfyUrl}`);
         }
       }
     }
 
     console.log(`Webhook: Update data for generation ${generationId}`, updateData);
 
-    // Simple approach: Use raw SQL update to bypass RLS
+    // Update the generation with the processed texture URLs
     const { data: updateResult, error: updateError } = await supabase
       .from('generations')
-      .update({
-        status: 'completed',
-        diffuse_storage_path: textures.diffuse,
-        normal_storage_path: textures.normal,
-        height_storage_path: textures.height,
-        thumbnail_storage_path: textures.thumbnail
-      })
+      .update(updateData)
       .eq('id', generationId)
       .select('id, status');
 

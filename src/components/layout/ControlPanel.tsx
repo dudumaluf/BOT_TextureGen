@@ -8,8 +8,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import Image from "next/image";
-import { Dices, Library } from "lucide-react";
+import { Dices, Library, Zap, Clock, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
+import UpgradeButton from "@/components/ui/upgrade-button";
 
 export default function ControlPanel() {
   const { 
@@ -22,6 +23,9 @@ export default function ControlPanel() {
     subjectPrompt,
     seed,
     isLoading,
+    highQuality,
+    currentGeneration,
+    queueCount,
     setModelUrl, 
     setIsLoading,
     setStylePrompt,
@@ -32,6 +36,10 @@ export default function ControlPanel() {
     setReferenceImageName,
     setModelFileName,
     setSeed,
+    setHighQuality,
+    setCurrentGeneration,
+    setCanUpgrade,
+    addToQueue,
     toggleGallery,
   } = useAppStore();
   const supabase = createClient();
@@ -72,7 +80,23 @@ export default function ControlPanel() {
             setGeneratedTextures(textureData);
             setIsLoading(false);
             setCurrentGenerationId(null);
-            toast.success("🎉 Textures generated successfully! (auto-detected)");
+            
+            // Create generation pair for progressive enhancement
+            const generationPair = {
+              id: generation.id,
+              fastGeneration: generation,
+              canUpgrade: !highQuality, // Can upgrade if it was a fast generation
+              isUpgrading: false,
+              currentTextures: textureData
+            };
+            
+            setCurrentGeneration(generationPair);
+            
+            if (!highQuality) {
+              toast.success("🎉 Fast textures ready! Click 'Upgrade' for maximum quality.");
+            } else {
+              toast.success("🎉 High Quality textures generated successfully!");
+            }
             clearInterval(pollInterval);
           }
           
@@ -191,11 +215,21 @@ export default function ControlPanel() {
       return;
     }
 
+    // Progressive Enhancement: Always start with fast mode for instant gratification
+    const useProgressiveMode = !highQuality; // Only use progressive if user hasn't explicitly chosen HQ
+    const actualQuality = useProgressiveMode ? false : highQuality;
+
     setIsLoading(true);
-    toast.info("Starting texture generation...");
+    const estimatedTime = actualQuality ? "12-15 minutes" : "2-3 minutes";
+    
+    if (useProgressiveMode) {
+      toast.info("🚀 Starting fast preview... (2-3 minutes)");
+    } else {
+      toast.info(`Starting texture generation... (Est. ${estimatedTime})`);
+    }
     
     try {
-      // 1. Start the generation
+      // 1. Start the generation (always fast first in progressive mode)
       const startResponse = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -207,6 +241,7 @@ export default function ControlPanel() {
           stylePrompt,
           subjectPrompt,
           seed,
+          highQuality: actualQuality,
         }),
       });
 
@@ -218,8 +253,12 @@ export default function ControlPanel() {
 
       // 2. Set the current generation ID and start polling
       setCurrentGenerationId(generationId);
-      toast.info("Generation started! Automatic detection every 15 seconds.");
-      console.log(`Generation: Started generation ${generationId} - specific polling active`);
+      
+      if (useProgressiveMode) {
+        console.log(`Generation: Started progressive generation ${generationId} - fast preview first`);
+      } else {
+        console.log(`Generation: Started generation ${generationId} - ${actualQuality ? 'quality' : 'fast'} mode`);
+      }
 
     } catch (error: any) {
       console.error("Error starting generation:", error);
@@ -297,13 +336,64 @@ export default function ControlPanel() {
         </div>
       </div>
 
+      {/* Speed Control Section */}
+      <div className="space-y-3 p-3 bg-gray-50 rounded-lg border">
+        <label className="block text-sm font-medium text-gray-700">
+          Generation Quality
+        </label>
+        
+        <div className="space-y-2">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={highQuality}
+              onChange={(e) => setHighQuality(e.target.checked)}
+              disabled={isLoading}
+              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+            />
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium">High Quality Upscaling</span>
+            </div>
+          </label>
+          
+          <div className="ml-7 text-xs text-gray-500">
+            {highQuality ? (
+              <div className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                <span>12-15 minutes • Maximum detail</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <Zap className="h-3 w-3" />
+                <span>5-8 minutes • Good quality, faster</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       <Button className="w-full" onClick={handleGenerate} disabled={isLoading}>
-        {isLoading ? 'Processing...' : 'Generate Textures'}
+        <div className="flex items-center gap-2">
+          {queueCount > 0 && <Plus className="h-4 w-4" />}
+          <span>
+            {isLoading 
+              ? 'Processing...' 
+              : queueCount > 0 
+                ? `Add to Queue (${queueCount})` 
+                : 'Generate Textures'
+            }
+          </span>
+        </div>
       </Button>
+      
+      {/* Progressive Enhancement: Upgrade Button */}
+      <UpgradeButton />
       
       {isLoading && (
         <Button variant="outline" className="w-full" onClick={() => {
           setIsLoading(false);
+          setCurrentGenerationId(null);
           toast.info("Generation cancelled - you can start a new one");
         }}>
           Cancel Generation
@@ -350,11 +440,6 @@ export default function ControlPanel() {
 
       <Button variant="outline" className="w-full" onClick={handleSignOut}>
         Sign Out
-      </Button>
-
-      <Button variant="outline" className="w-full flex items-center gap-2" onClick={toggleGallery}>
-        <Library className="h-4 w-4" />
-        Toggle Gallery
       </Button>
       
       {/* App Title */}

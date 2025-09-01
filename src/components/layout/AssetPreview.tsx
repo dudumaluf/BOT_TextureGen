@@ -3,13 +3,35 @@
 import { useAppStore } from "@/store/appStore";
 import Image from "next/image";
 import { useState } from "react";
-import { Button } from "../ui/button";
-import { Eye, EyeOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { X, Download } from "lucide-react";
+import { toast } from "sonner";
 
-export default function AssetPreview() {
+interface AssetPreviewProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewProps) {
   const { referenceImageUrl, generatedTextures } = useAppStore();
-  const [isOpen, setIsOpen] = useState(true);
+
+  const handleDownload = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      toast.success(`Downloaded ${filename}`);
+    } catch (error) {
+      toast.error(`Failed to download ${filename}`);
+    }
+  };
 
   const hasContent = referenceImageUrl || generatedTextures.diffuse || generatedTextures.thumbnail;
 
@@ -18,29 +40,23 @@ export default function AssetPreview() {
   }
 
   return (
-    <div className="absolute top-4 right-4 z-10">
-      <div className="flex justify-end">
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Button onClick={() => setIsOpen(!isOpen)} size="icon" variant="ghost">
-            <motion.div
-              animate={{ rotate: isOpen ? 0 : 180 }}
-              transition={{ duration: 0.2 }}
+    <div className="bg-white/95 backdrop-blur-md rounded-xl border border-white/20 shadow-lg">
+      <div className="p-3">
+        {/* Header with close button */}
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-medium text-gray-600">Textures</span>
+          {onClose && (
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={onClose}
+              className="p-1 rounded-full hover:bg-gray-100 transition-colors"
             >
-              {isOpen ? <EyeOff /> : <Eye />}
-            </motion.div>
-          </Button>
-        </motion.div>
-      </div>
-      
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            transition={{ type: "spring", damping: 20, stiffness: 300 }}
-            className="mt-2 flex gap-2 rounded-lg bg-white/90 p-3 shadow-lg backdrop-blur-md border"
-          >
+              <X className="h-3 w-3 text-gray-400" />
+            </motion.button>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
             {referenceImageUrl && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
@@ -48,15 +64,17 @@ export default function AssetPreview() {
                 transition={{ delay: 0.1 }}
                 className="text-center"
               >
-                <p className="text-xs font-semibold mb-1">Reference</p>
-                <div className="relative overflow-hidden rounded">
-                  <Image 
-                    src={referenceImageUrl} 
-                    alt="Reference" 
-                    width={100} 
-                    height={100} 
-                    className="rounded transition-transform duration-300 hover:scale-110" 
-                  />
+                <div className="text-center">
+                  <p className="text-xs font-medium mb-1 text-gray-600">Ref</p>
+                  <div className="relative overflow-hidden rounded">
+                    <Image 
+                      src={referenceImageUrl} 
+                      alt="Reference" 
+                      width={60} 
+                      height={60} 
+                      className="rounded transition-transform duration-300 hover:scale-110" 
+                    />
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -67,15 +85,17 @@ export default function AssetPreview() {
                 transition={{ delay: 0.2 }}
                 className="text-center"
               >
-                <p className="text-xs font-semibold mb-1">Front View</p>
-                <div className="relative overflow-hidden rounded">
-                  <img 
-                    src={generatedTextures.thumbnail} 
-                    alt="Front View" 
-                    width={100} 
-                    height={100} 
-                    className="rounded transition-transform duration-300 hover:scale-110" 
-                  />
+                <div className="text-center">
+                  <p className="text-xs font-medium mb-1 text-gray-600">View</p>
+                  <div className="relative overflow-hidden rounded">
+                    <img 
+                      src={generatedTextures.thumbnail} 
+                      alt="Front View" 
+                      width={60} 
+                      height={60} 
+                      className="rounded transition-transform duration-300 hover:scale-110" 
+                    />
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -86,15 +106,25 @@ export default function AssetPreview() {
                 transition={{ delay: 0.3 }}
                 className="text-center"
               >
-                <p className="text-xs font-semibold mb-1">Diffuse</p>
-                <div className="relative overflow-hidden rounded">
-                  <img 
-                    src={generatedTextures.diffuse} 
-                    alt="Diffuse" 
-                    width={100} 
-                    height={100} 
-                    className="rounded transition-transform duration-300 hover:scale-110" 
-                  />
+                <div className="text-center relative group">
+                  <p className="text-xs font-medium mb-1 text-gray-600">Diffuse</p>
+                  <div className="relative overflow-hidden rounded">
+                    <img 
+                      src={generatedTextures.diffuse} 
+                      alt="Diffuse" 
+                      width={60} 
+                      height={60} 
+                      className="rounded transition-transform duration-300 hover:scale-110" 
+                    />
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => handleDownload(generatedTextures.diffuse!, 'diffuse_texture.png')}
+                      className="absolute inset-0 bg-black/50 text-white rounded opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center"
+                    >
+                      <Download className="h-4 w-4" />
+                    </motion.button>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -105,15 +135,25 @@ export default function AssetPreview() {
                 transition={{ delay: 0.4 }}
                 className="text-center"
               >
-                <p className="text-xs font-semibold mb-1">Normal</p>
-                <div className="relative overflow-hidden rounded">
-                  <img 
-                    src={generatedTextures.normal} 
-                    alt="Normal" 
-                    width={100} 
-                    height={100} 
-                    className="rounded transition-transform duration-300 hover:scale-110" 
-                  />
+                <div className="text-center relative group">
+                  <p className="text-xs font-medium mb-1 text-gray-600">Normal</p>
+                  <div className="relative overflow-hidden rounded">
+                    <img 
+                      src={generatedTextures.normal} 
+                      alt="Normal" 
+                      width={60} 
+                      height={60} 
+                      className="rounded transition-transform duration-300 hover:scale-110" 
+                    />
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => handleDownload(generatedTextures.normal!, 'normal_texture.png')}
+                      className="absolute inset-0 bg-black/50 text-white rounded opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center"
+                    >
+                      <Download className="h-4 w-4" />
+                    </motion.button>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -124,21 +164,30 @@ export default function AssetPreview() {
                 transition={{ delay: 0.5 }}
                 className="text-center"
               >
-                <p className="text-xs font-semibold mb-1">Height</p>
-                <div className="relative overflow-hidden rounded">
-                  <img 
-                    src={generatedTextures.height} 
-                    alt="Height" 
-                    width={100} 
-                    height={100} 
-                    className="rounded transition-transform duration-300 hover:scale-110" 
-                  />
+                <div className="text-center relative group">
+                  <p className="text-xs font-medium mb-1 text-gray-600">Height</p>
+                  <div className="relative overflow-hidden rounded">
+                    <img 
+                      src={generatedTextures.height} 
+                      alt="Height" 
+                      width={60} 
+                      height={60} 
+                      className="rounded transition-transform duration-300 hover:scale-110" 
+                    />
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => handleDownload(generatedTextures.height!, 'height_texture.png')}
+                      className="absolute inset-0 bg-black/50 text-white rounded opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center"
+                    >
+                      <Download className="h-4 w-4" />
+                    </motion.button>
+                  </div>
                 </div>
               </motion.div>
             )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      </div>
     </div>
   );
 }
