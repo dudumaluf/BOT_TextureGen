@@ -1,0 +1,2052 @@
+{
+  "28": {
+    "inputs": {
+      "model": "hunyuan3d-delight-v2-0"
+    },
+    "class_type": "DownloadAndLoadHy3DDelightModel",
+    "_meta": {
+      "title": "(Down)Load Hy3D DelightModel"
+    }
+  },
+  "35": {
+    "inputs": {
+      "steps": 50,
+      "width": [
+        "293",
+        0
+      ],
+      "height": [
+        "293",
+        0
+      ],
+      "cfg_image": 1,
+      "seed": 0,
+      "delight_pipe": [
+        "28",
+        0
+      ],
+      "image": [
+        "64",
+        0
+      ],
+      "scheduler": [
+        "148",
+        0
+      ]
+    },
+    "class_type": "Hy3DDelightImage",
+    "_meta": {
+      "title": "Hy3DDelightImage"
+    }
+  },
+  "45": {
+    "inputs": {
+      "images": [
+        "35",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "61": {
+    "inputs": {
+      "camera_azimuths": "0, 90, 180, 270, 0, 180",
+      "camera_elevations": "0, 0, 0, 0, 90, -90",
+      "view_weights": "1, 0.1, 0.5, 0.1, 0.05, 0.05",
+      "camera_distance": 1.45,
+      "ortho_scale": 1.2
+    },
+    "class_type": "Hy3DCameraConfig",
+    "_meta": {
+      "title": "Hy3D Camera Config"
+    }
+  },
+  "64": {
+    "inputs": {
+      "x": 0,
+      "y": 0,
+      "resize_source": false,
+      "destination": [
+        "133",
+        0
+      ],
+      "source": [
+        "188",
+        0
+      ],
+      "mask": [
+        "189",
+        0
+      ]
+    },
+    "class_type": "ImageCompositeMasked",
+    "_meta": {
+      "title": "ImageCompositeMasked"
+    }
+  },
+  "79": {
+    "inputs": {
+      "render_size": 1024,
+      "texture_size": 2048,
+      "normal_space": "world",
+      "trimesh": [
+        "527",
+        0
+      ],
+      "camera_config": [
+        "61",
+        0
+      ]
+    },
+    "class_type": "Hy3DRenderMultiView",
+    "_meta": {
+      "title": "Hy3D Render MultiView"
+    }
+  },
+  "85": {
+    "inputs": {
+      "model": "hunyuan3d-paint-v2-0"
+    },
+    "class_type": "DownloadAndLoadHy3DPaintModel",
+    "_meta": {
+      "title": "(Down)Load Hy3D PaintModel"
+    }
+  },
+  "88": {
+    "inputs": {
+      "view_size": 512,
+      "steps": 25,
+      "seed": 4655,
+      "denoise_strength": 1,
+      "pipeline": [
+        "85",
+        0
+      ],
+      "ref_image": [
+        "443",
+        0
+      ],
+      "normal_maps": [
+        "79",
+        0
+      ],
+      "position_maps": [
+        "79",
+        1
+      ],
+      "camera_config": [
+        "61",
+        0
+      ],
+      "scheduler": [
+        "149",
+        0
+      ]
+    },
+    "class_type": "Hy3DSampleMultiView",
+    "_meta": {
+      "title": "Hy3D Sample MultiView"
+    }
+  },
+  "90": {
+    "inputs": {
+      "images": [
+        "79",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "92": {
+    "inputs": {
+      "images": [
+        "350",
+        0
+      ],
+      "renderer": [
+        "79",
+        2
+      ],
+      "camera_config": [
+        "61",
+        0
+      ]
+    },
+    "class_type": "Hy3DBakeFromMultiview",
+    "_meta": {
+      "title": "Hy3D Bake From Multiview"
+    }
+  },
+  "98": {
+    "inputs": {
+      "texture": [
+        "104",
+        0
+      ],
+      "renderer": [
+        "129",
+        2
+      ]
+    },
+    "class_type": "Hy3DApplyTexture",
+    "_meta": {
+      "title": "Hy3D Apply Texture"
+    }
+  },
+  "99": {
+    "inputs": {
+      "filename_prefix": [
+        "597",
+        0
+      ],
+      "file_format": "glb",
+      "save_file": true,
+      "trimesh": [
+        "447",
+        0
+      ]
+    },
+    "class_type": "Hy3DExportMesh",
+    "_meta": {
+      "title": "Hy3DExportMesh"
+    }
+  },
+  "104": {
+    "inputs": {
+      "inpaint_radius": 4,
+      "inpaint_method": "ns",
+      "texture": [
+        "129",
+        0
+      ],
+      "mask": [
+        "129",
+        1
+      ]
+    },
+    "class_type": "CV2InpaintTexture",
+    "_meta": {
+      "title": "CV2 Inpaint Texture"
+    }
+  },
+  "111": {
+    "inputs": {
+      "images": [
+        "465",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image: Multiview results"
+    }
+  },
+  "116": {
+    "inputs": {
+      "images": [
+        "79",
+        1
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "125": {
+    "inputs": {
+      "images": [
+        "92",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image: Initial baked texture"
+    }
+  },
+  "126": {
+    "inputs": {
+      "images": [
+        "129",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image: vertex inpainted texture"
+    }
+  },
+  "129": {
+    "inputs": {
+      "texture": [
+        "92",
+        0
+      ],
+      "mask": [
+        "92",
+        1
+      ],
+      "renderer": [
+        "92",
+        2
+      ]
+    },
+    "class_type": "Hy3DMeshVerticeInpaintTexture",
+    "_meta": {
+      "title": "Hy3D Mesh Vertice Inpaint Texture"
+    }
+  },
+  "132": {
+    "inputs": {
+      "value": 1,
+      "width": [
+        "293",
+        0
+      ],
+      "height": [
+        "293",
+        0
+      ]
+    },
+    "class_type": "SolidMask",
+    "_meta": {
+      "title": "SolidMask"
+    }
+  },
+  "133": {
+    "inputs": {
+      "mask": [
+        "132",
+        0
+      ]
+    },
+    "class_type": "MaskToImage",
+    "_meta": {
+      "title": "Convert Mask to Image"
+    }
+  },
+  "148": {
+    "inputs": {
+      "scheduler": "Euler A",
+      "sigmas": "default",
+      "pipeline": [
+        "28",
+        0
+      ]
+    },
+    "class_type": "Hy3DDiffusersSchedulerConfig",
+    "_meta": {
+      "title": "Hy3D Diffusers Scheduler Config"
+    }
+  },
+  "149": {
+    "inputs": {
+      "scheduler": "Euler A",
+      "sigmas": "default",
+      "pipeline": [
+        "85",
+        0
+      ]
+    },
+    "class_type": "Hy3DDiffusersSchedulerConfig",
+    "_meta": {
+      "title": "Hy3D Diffusers Scheduler Config"
+    }
+  },
+  "154": {
+    "inputs": {
+      "model_file": [
+        "99",
+        0
+      ],
+      "image": ""
+    },
+    "class_type": "Preview3D",
+    "_meta": {
+      "title": "Preview 3D"
+    }
+  },
+  "177": {
+    "inputs": {
+      "text": "text, watermark, oversaturated, high contrast, nsfw, ((naked)), (chair)",
+      "clip": [
+        "183",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "178": {
+    "inputs": {
+      "text": [
+        "301",
+        0
+      ],
+      "clip": [
+        "183",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "179": {
+    "inputs": {
+      "width": [
+        "293",
+        0
+      ],
+      "height": [
+        "293",
+        0
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "Empty Latent Image"
+    }
+  },
+  "180": {
+    "inputs": {
+      "seed": 91,
+      "steps": 45,
+      "cfg": 5.5,
+      "sampler_name": "dpmpp_2m",
+      "scheduler": "karras",
+      "denoise": 1,
+      "model": [
+        "564",
+        0
+      ],
+      "positive": [
+        "553",
+        0
+      ],
+      "negative": [
+        "553",
+        1
+      ],
+      "latent_image": [
+        "553",
+        2
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "181": {
+    "inputs": {
+      "samples": [
+        "180",
+        0
+      ],
+      "vae": [
+        "183",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "183": {
+    "inputs": {
+      "ckpt_name": "sdxl\\juggernautXL_juggXIByRundiffusion.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "184": {
+    "inputs": {
+      "strength": 1.0000000000000002,
+      "start_percent": 0,
+      "end_percent": 1,
+      "positive": [
+        "178",
+        0
+      ],
+      "negative": [
+        "177",
+        0
+      ],
+      "control_net": [
+        "320",
+        0
+      ],
+      "image": [
+        "314",
+        0
+      ],
+      "vae": [
+        "183",
+        2
+      ]
+    },
+    "class_type": "ControlNetApplyAdvanced",
+    "_meta": {
+      "title": "Apply ControlNet"
+    }
+  },
+  "185": {
+    "inputs": {
+      "control_net_name": "sdxl\\controlnet-union-sdxl-1.0\\diffusion_pytorch_model_promax.safetensors"
+    },
+    "class_type": "ControlNetLoader",
+    "_meta": {
+      "title": "Load ControlNet Model"
+    }
+  },
+  "186": {
+    "inputs": {
+      "mode": "base",
+      "use_jit": true
+    },
+    "class_type": "TransparentBGSession+",
+    "_meta": {
+      "title": "🔧 InSPyReNet TransparentBG"
+    }
+  },
+  "187": {
+    "inputs": {
+      "rembg_session": [
+        "186",
+        0
+      ],
+      "image": [
+        "181",
+        0
+      ]
+    },
+    "class_type": "ImageRemoveBackground+",
+    "_meta": {
+      "title": "🔧 Image Remove Background"
+    }
+  },
+  "188": {
+    "inputs": {
+      "width": [
+        "293",
+        0
+      ],
+      "height": [
+        "293",
+        0
+      ],
+      "upscale_method": "nearest-exact",
+      "keep_proportion": "resize",
+      "pad_color": "0, 0, 0",
+      "crop_position": "center",
+      "divisible_by": 2,
+      "device": "cpu",
+      "image": [
+        "187",
+        0
+      ]
+    },
+    "class_type": "ImageResizeKJv2",
+    "_meta": {
+      "title": "Resize Image v2"
+    }
+  },
+  "189": {
+    "inputs": {
+      "width": [
+        "293",
+        0
+      ],
+      "height": [
+        "293",
+        0
+      ],
+      "keep_proportions": false,
+      "upscale_method": "nearest-exact",
+      "crop": "disabled",
+      "mask": [
+        "187",
+        1
+      ]
+    },
+    "class_type": "ResizeMask",
+    "_meta": {
+      "title": "Resize Mask"
+    }
+  },
+  "198": {
+    "inputs": {
+      "strength": 0.8000000000000002,
+      "start_percent": 0,
+      "end_percent": 0.8000000000000002,
+      "positive": [
+        "351",
+        0
+      ],
+      "negative": [
+        "177",
+        0
+      ],
+      "control_net": [
+        "320",
+        0
+      ],
+      "image": [
+        "448",
+        0
+      ],
+      "vae": [
+        "183",
+        2
+      ]
+    },
+    "class_type": "ControlNetApplyAdvanced",
+    "_meta": {
+      "title": "Apply ControlNet"
+    }
+  },
+  "209": {
+    "inputs": {
+      "blend_factor": 0.5000000000000001,
+      "blend_mode": "normal",
+      "image1": [
+        "35",
+        0
+      ],
+      "image2": [
+        "218",
+        0
+      ]
+    },
+    "class_type": "ImageBlend",
+    "_meta": {
+      "title": "Image Blend"
+    }
+  },
+  "210": {
+    "inputs": {
+      "images": [
+        "209",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "215": {
+    "inputs": {
+      "mask": [
+        "187",
+        1
+      ]
+    },
+    "class_type": "MaskToImage",
+    "_meta": {
+      "title": "Convert Mask to Image"
+    }
+  },
+  "217": {
+    "inputs": {
+      "image": [
+        "215",
+        0
+      ]
+    },
+    "class_type": "ImageInvert",
+    "_meta": {
+      "title": "Invert Image"
+    }
+  },
+  "218": {
+    "inputs": {
+      "blend_factor": 1,
+      "blend_mode": "screen",
+      "image1": [
+        "217",
+        0
+      ],
+      "image2": [
+        "187",
+        0
+      ]
+    },
+    "class_type": "ImageBlend",
+    "_meta": {
+      "title": "Image Blend"
+    }
+  },
+  "219": {
+    "inputs": {
+      "images": [
+        "218",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "222": {
+    "inputs": {
+      "upscale_by": 4,
+      "seed": 0,
+      "steps": 30,
+      "cfg": 4,
+      "sampler_name": "dpmpp_2m",
+      "scheduler": "karras",
+      "denoise": 0.4000000000000001,
+      "mode_type": "Linear",
+      "tile_width": 1024,
+      "tile_height": 1024,
+      "mask_blur": 8,
+      "tile_padding": 32,
+      "seam_fix_mode": "None",
+      "seam_fix_denoise": 1,
+      "seam_fix_width": 64,
+      "seam_fix_mask_blur": 8,
+      "seam_fix_padding": 16,
+      "force_uniform_tiles": true,
+      "tiled_decode": false,
+      "image": [
+        "465",
+        0
+      ],
+      "model": [
+        "183",
+        0
+      ],
+      "positive": [
+        "198",
+        0
+      ],
+      "negative": [
+        "198",
+        1
+      ],
+      "vae": [
+        "183",
+        2
+      ],
+      "upscale_model": [
+        "223",
+        0
+      ]
+    },
+    "class_type": "UltimateSDUpscale",
+    "_meta": {
+      "title": "Ultimate SD Upscale"
+    }
+  },
+  "223": {
+    "inputs": {
+      "model_name": "4x-ClearRealityV1.pth"
+    },
+    "class_type": "Upscale Model Loader",
+    "_meta": {
+      "title": "Upscale Model Loader"
+    }
+  },
+  "224": {
+    "inputs": {
+      "rgthree_comparer": {
+        "images": [
+          {
+            "name": "A",
+            "selected": true,
+            "url": "/api/view?filename=rgthree.compare._temp_lmjbz_00001_.png&type=temp&subfolder=&rand=0.10105998375480385"
+          },
+          {
+            "name": "B",
+            "selected": true,
+            "url": "/api/view?filename=rgthree.compare._temp_lmjbz_00002_.png&type=temp&subfolder=&rand=0.906575681283774"
+          }
+        ]
+      },
+      "image_a": [
+        "385",
+        0
+      ],
+      "image_b": [
+        "226",
+        0
+      ]
+    },
+    "class_type": "Image Comparer (rgthree)",
+    "_meta": {
+      "title": "Image Comparer (rgthree)"
+    }
+  },
+  "226": {
+    "inputs": {
+      "num_columns": 3,
+      "match_image_size": false,
+      "max_resolution": 4096,
+      "images": [
+        "350",
+        0
+      ]
+    },
+    "class_type": "ImageConcatFromBatch",
+    "_meta": {
+      "title": "Image Concatenate From Batch"
+    }
+  },
+  "227": {
+    "inputs": {
+      "upscale_by": 2.0000000000000004,
+      "seed": 0,
+      "steps": 25,
+      "cfg": 4,
+      "sampler_name": "dpmpp_2m",
+      "scheduler": "karras",
+      "denoise": 0.30000000000000004,
+      "mode_type": "Linear",
+      "tile_width": 1024,
+      "tile_height": 1024,
+      "mask_blur": 16,
+      "tile_padding": 64,
+      "seam_fix_mode": "None",
+      "seam_fix_denoise": 1,
+      "seam_fix_width": 64,
+      "seam_fix_mask_blur": 8,
+      "seam_fix_padding": 16,
+      "force_uniform_tiles": true,
+      "tiled_decode": false,
+      "image": [
+        "222",
+        0
+      ],
+      "model": [
+        "183",
+        0
+      ],
+      "positive": [
+        "178",
+        0
+      ],
+      "negative": [
+        "177",
+        0
+      ],
+      "vae": [
+        "183",
+        2
+      ],
+      "upscale_model": [
+        "223",
+        0
+      ]
+    },
+    "class_type": "UltimateSDUpscale",
+    "_meta": {
+      "title": "Ultimate SD Upscale"
+    }
+  },
+  "293": {
+    "inputs": {
+      "value": 1024
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Int"
+    }
+  },
+  "300": {
+    "inputs": {
+      "value": [
+        "605",
+        0
+      ]
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Style Prompt"
+    }
+  },
+  "301": {
+    "inputs": {
+      "delimiter": ",",
+      "string1": [
+        "300",
+        0
+      ],
+      "string2": [
+        "302",
+        0
+      ]
+    },
+    "class_type": "JoinStrings",
+    "_meta": {
+      "title": "Join Strings"
+    }
+  },
+  "302": {
+    "inputs": {
+      "value": [
+        "606",
+        0
+      ]
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Subject Prompt"
+    }
+  },
+  "313": {
+    "inputs": {
+      "value": 1
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Select your main view:"
+    }
+  },
+  "314": {
+    "inputs": {
+      "batch_index": [
+        "317",
+        0
+      ],
+      "length": 1,
+      "image": [
+        "448",
+        0
+      ]
+    },
+    "class_type": "ImageFromBatch",
+    "_meta": {
+      "title": "ImageFromBatch"
+    }
+  },
+  "315": {
+    "inputs": {
+      "images": [
+        "314",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "317": {
+    "inputs": {
+      "value": "a-1",
+      "a": [
+        "313",
+        0
+      ]
+    },
+    "class_type": "SimpleMath+",
+    "_meta": {
+      "title": "🔧 Simple Math"
+    }
+  },
+  "320": {
+    "inputs": {
+      "type": "depth",
+      "control_net": [
+        "185",
+        0
+      ]
+    },
+    "class_type": "SetUnionControlNetType",
+    "_meta": {
+      "title": "SetUnionControlNetType"
+    }
+  },
+  "340": {
+    "inputs": {
+      "images": [
+        "222",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "343": {
+    "inputs": {
+      "rgthree_comparer": {
+        "images": [
+          {
+            "name": "A",
+            "selected": true,
+            "url": "/api/view?filename=rgthree.compare._temp_vjimn_00001_.png&type=temp&subfolder=&rand=0.5477277723951435"
+          },
+          {
+            "name": "B",
+            "selected": true,
+            "url": "/api/view?filename=rgthree.compare._temp_vjimn_00002_.png&type=temp&subfolder=&rand=0.626702175978051"
+          }
+        ]
+      },
+      "image_a": [
+        "314",
+        0
+      ],
+      "image_b": [
+        "181",
+        0
+      ]
+    },
+    "class_type": "Image Comparer (rgthree)",
+    "_meta": {
+      "title": "Image Comparer (rgthree)"
+    }
+  },
+  "349": {
+    "inputs": {
+      "model_name": "bbox/face_yolov8m.pt"
+    },
+    "class_type": "UltralyticsDetectorProvider",
+    "_meta": {
+      "title": "UltralyticsDetectorProvider"
+    }
+  },
+  "350": {
+    "inputs": {
+      "guide_size": 512,
+      "guide_size_for": true,
+      "max_size": 1024,
+      "seed": 0,
+      "steps": 4,
+      "cfg": 4,
+      "sampler_name": "euler",
+      "scheduler": "karras",
+      "denoise": 0.3600000000000001,
+      "feather": 5,
+      "noise_mask": true,
+      "force_inpaint": true,
+      "bbox_threshold": 0.5,
+      "bbox_dilation": 10,
+      "bbox_crop_factor": 3,
+      "sam_detection_hint": "center-1",
+      "sam_dilation": 0,
+      "sam_threshold": 0.93,
+      "sam_bbox_expansion": 0,
+      "sam_mask_hint_threshold": 0.7,
+      "sam_mask_hint_use_negative": "False",
+      "drop_size": 10,
+      "wildcard": "",
+      "cycle": 1,
+      "inpaint_model": true,
+      "noise_mask_feather": 20,
+      "tiled_encode": false,
+      "tiled_decode": false,
+      "image": [
+        "227",
+        0
+      ],
+      "model": [
+        "183",
+        0
+      ],
+      "clip": [
+        "183",
+        1
+      ],
+      "vae": [
+        "183",
+        2
+      ],
+      "positive": [
+        "198",
+        0
+      ],
+      "negative": [
+        "198",
+        1
+      ],
+      "bbox_detector": [
+        "349",
+        0
+      ]
+    },
+    "class_type": "FaceDetailer",
+    "_meta": {
+      "title": "FaceDetailer"
+    }
+  },
+  "351": {
+    "inputs": {
+      "conditioning_to": [
+        "178",
+        0
+      ],
+      "conditioning_from": [
+        "352",
+        0
+      ]
+    },
+    "class_type": "ConditioningConcat",
+    "_meta": {
+      "title": "Conditioning (Concat)"
+    }
+  },
+  "352": {
+    "inputs": {
+      "text": "4k ultra high resolution, photorealistic fabric texture, sharp stitching, natural shadows, realistic lighting, smooth gradients, consistent brown tones, bomber jacket with zipper closure and ribbed collar cuffs and hem, two diagonal side pockets, centered front-facing view, professional product photography, crisp edges, noise-free, true-to-life realism\n",
+      "clip": [
+        "183",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Upscale Prompt"
+    }
+  },
+  "356": {
+    "inputs": {
+      "blend_factor": 0.5000000000000001,
+      "blend_mode": "multiply",
+      "image1": [
+        "209",
+        0
+      ],
+      "image2": [
+        "215",
+        0
+      ]
+    },
+    "class_type": "ImageBlend",
+    "_meta": {
+      "title": "Image Blend"
+    }
+  },
+  "373": {
+    "inputs": {
+      "scale_XY": 1,
+      "images": [
+        "104",
+        0
+      ]
+    },
+    "class_type": "NormalMapSimple",
+    "_meta": {
+      "title": "Normal Map (Simple)"
+    }
+  },
+  "374": {
+    "inputs": {
+      "filename_prefix": [
+        "594",
+        0
+      ],
+      "images": [
+        "373",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "377": {
+    "inputs": {
+      "filename_prefix": [
+        "592",
+        0
+      ],
+      "images": [
+        "104",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "380": {
+    "inputs": {
+      "preset": "PLUS (high strength)",
+      "model": [
+        "504",
+        0
+      ]
+    },
+    "class_type": "IPAdapterUnifiedLoader",
+    "_meta": {
+      "title": "IPAdapter Unified Loader"
+    }
+  },
+  "381": {
+    "inputs": {
+      "image": "jacket_reference.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Reference Image"
+    }
+  },
+  "382": {
+    "inputs": {
+      "interpolation": "LANCZOS",
+      "crop_position": "center",
+      "sharpening": 0,
+      "image": [
+        "607",
+        0
+      ]
+    },
+    "class_type": "PrepImageForClipVision",
+    "_meta": {
+      "title": "Prep Image For ClipVision"
+    }
+  },
+  "383": {
+    "inputs": {
+      "images": [
+        "227",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "384": {
+    "inputs": {
+      "images": [
+        "350",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "385": {
+    "inputs": {
+      "num_columns": 3,
+      "match_image_size": false,
+      "max_resolution": 4096,
+      "images": [
+        "88",
+        0
+      ]
+    },
+    "class_type": "ImageConcatFromBatch",
+    "_meta": {
+      "title": "Image Concatenate From Batch"
+    }
+  },
+  "443": {
+    "inputs": {
+      "width": 512,
+      "height": 512,
+      "upscale_method": "nearest-exact",
+      "keep_proportion": "resize",
+      "pad_color": "0, 0, 0",
+      "crop_position": "center",
+      "divisible_by": 2,
+      "device": "cpu",
+      "image": [
+        "356",
+        0
+      ]
+    },
+    "class_type": "ImageResizeKJv2",
+    "_meta": {
+      "title": "Resize Image v2"
+    }
+  },
+  "447": {
+    "inputs": {
+      "texture": "normal",
+      "trimesh": [
+        "98",
+        0
+      ],
+      "image": [
+        "373",
+        0
+      ]
+    },
+    "class_type": "Hy3DSetMeshPBRTextures",
+    "_meta": {
+      "title": "Hy3D Set Mesh PBR Textures"
+    }
+  },
+  "448": {
+    "inputs": {
+      "render_size": 1024,
+      "texture_size": 1024,
+      "trimesh": [
+        "527",
+        0
+      ],
+      "camera_config": [
+        "61",
+        0
+      ]
+    },
+    "class_type": "Hy3DRenderMultiViewDepth",
+    "_meta": {
+      "title": "Hy3D Render MultiView Depth"
+    }
+  },
+  "449": {
+    "inputs": {
+      "images": [
+        "448",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "450": {
+    "inputs": {
+      "batch_index": 0,
+      "length": 1,
+      "image": [
+        "350",
+        0
+      ]
+    },
+    "class_type": "ImageFromBatch",
+    "_meta": {
+      "title": "ImageFromBatch"
+    }
+  },
+  "451": {
+    "inputs": {
+      "filename_prefix": [
+        "587",
+        0
+      ],
+      "images": [
+        "450",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "454": {
+    "inputs": {
+      "mode": "Normals to Height",
+      "color_to_normals_overlap": "SMALL",
+      "normals_to_curvature_blur_radius": "SMALLEST",
+      "normals_to_height_seamless": true,
+      "image": [
+        "373",
+        0
+      ]
+    },
+    "class_type": "Deep Bump (mtb)",
+    "_meta": {
+      "title": "Deep Bump (mtb)"
+    }
+  },
+  "456": {
+    "inputs": {
+      "filename_prefix": [
+        "595",
+        0
+      ],
+      "images": [
+        "454",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "465": {
+    "inputs": {
+      "indexes": [
+        "474",
+        0
+      ],
+      "mode": "replace",
+      "original_images": [
+        "88",
+        0
+      ],
+      "images_to_insert": [
+        "443",
+        0
+      ]
+    },
+    "class_type": "InsertImagesToBatchIndexed",
+    "_meta": {
+      "title": "Insert Images To Batch Indexed"
+    }
+  },
+  "474": {
+    "inputs": {
+      "prefix": "",
+      "suffix": "",
+      "input": [
+        "317",
+        0
+      ]
+    },
+    "class_type": "SomethingToString",
+    "_meta": {
+      "title": "Something To String"
+    }
+  },
+  "504": {
+    "inputs": {
+      "model": [
+        "183",
+        0
+      ]
+    },
+    "class_type": "ModelPassThrough",
+    "_meta": {
+      "title": "ModelPass"
+    }
+  },
+  "525": {
+    "inputs": {
+      "filename_prefix": "BR70/eisenhower_jacket",
+      "file_format": "glb",
+      "save_file": true,
+      "trimesh": [
+        "527",
+        0
+      ]
+    },
+    "class_type": "Hy3DExportMesh",
+    "_meta": {
+      "title": "Hy3DExportMesh"
+    }
+  },
+  "527": {
+    "inputs": {
+      "mesh": "eisenhower_jacket.glb"
+    },
+    "class_type": "Hy3DUploadMesh",
+    "_meta": {
+      "title": "Hy3D Upload Mesh"
+    }
+  },
+  "534": {
+    "inputs": {},
+    "class_type": "easy showAnything",
+    "_meta": {
+      "title": "Show Any"
+    }
+  },
+  "547": {
+    "inputs": {
+      "images": [
+        "350",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "549": {
+    "inputs": {
+      "weight": 0.7000000000000002,
+      "weight_type": "strong style transfer",
+      "combine_embeds": "concat",
+      "start_at": 0,
+      "end_at": 0.9000000000000002,
+      "embeds_scaling": "V only",
+      "model": [
+        "380",
+        0
+      ],
+      "ipadapter": [
+        "380",
+        1
+      ],
+      "image": [
+        "382",
+        0
+      ]
+    },
+    "class_type": "IPAdapterAdvanced",
+    "_meta": {
+      "title": "IPAdapter Advanced"
+    }
+  },
+  "552": {
+    "inputs": {
+      "images": [
+        "382",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "553": {
+    "inputs": {
+      "noise_mask": true,
+      "positive": [
+        "184",
+        0
+      ],
+      "negative": [
+        "184",
+        1
+      ],
+      "vae": [
+        "183",
+        2
+      ],
+      "pixels": [
+        "561",
+        0
+      ],
+      "mask": [
+        "560",
+        0
+      ]
+    },
+    "class_type": "InpaintModelConditioning",
+    "_meta": {
+      "title": "InpaintModelConditioning"
+    }
+  },
+  "555": {
+    "inputs": {
+      "mask": [
+        "559",
+        1
+      ]
+    },
+    "class_type": "MaskPreview+",
+    "_meta": {
+      "title": "🔧 Mask Preview"
+    }
+  },
+  "556": {
+    "inputs": {
+      "Hat": false,
+      "Hair": false,
+      "Face": false,
+      "Sunglasses": false,
+      "Upper-clothes": true,
+      "Skirt": false,
+      "Dress": false,
+      "Belt": false,
+      "Pants": false,
+      "Left-arm": false,
+      "Right-arm": false,
+      "Left-leg": false,
+      "Right-leg": false,
+      "Bag": false,
+      "Scarf": false,
+      "Left-shoe": false,
+      "Right-shoe": false,
+      "Background": false,
+      "process_res": 1024,
+      "mask_blur": 0,
+      "mask_offset": 0,
+      "background_color": "Alpha",
+      "invert_output": false
+    },
+    "class_type": "ClothesSegment",
+    "_meta": {
+      "title": "Clothes Segment (RMBG)"
+    }
+  },
+  "559": {
+    "inputs": {
+      "model": "BiRefNet_512x512",
+      "mask_blur": 0,
+      "mask_offset": 0,
+      "background": "Alpha",
+      "invert_output": false,
+      "refine_foreground": true,
+      "image": [
+        "314",
+        0
+      ]
+    },
+    "class_type": "BiRefNetRMBG",
+    "_meta": {
+      "title": "BiRefNet (RMBG)"
+    }
+  },
+  "560": {
+    "inputs": {
+      "expand": 0,
+      "incremental_expandrate": 0,
+      "tapered_corners": true,
+      "flip_input": false,
+      "blur_radius": 5,
+      "lerp_alpha": 1,
+      "decay_factor": 1,
+      "fill_holes": false,
+      "mask": [
+        "559",
+        1
+      ]
+    },
+    "class_type": "GrowMaskWithBlur",
+    "_meta": {
+      "title": "Grow Mask With Blur"
+    }
+  },
+  "561": {
+    "inputs": {
+      "x": 0,
+      "y": 0,
+      "resize_source": false,
+      "destination": [
+        "562",
+        0
+      ],
+      "source": [
+        "314",
+        0
+      ],
+      "mask": [
+        "559",
+        1
+      ]
+    },
+    "class_type": "ImageCompositeMasked",
+    "_meta": {
+      "title": "ImageCompositeMasked"
+    }
+  },
+  "562": {
+    "inputs": {
+      "size": "custom",
+      "custom_width": 1024,
+      "custom_height": 1024,
+      "color": "#FFFFFF"
+    },
+    "class_type": "LayerUtility: ColorImage V2",
+    "_meta": {
+      "title": "LayerUtility: ColorImage V2"
+    }
+  },
+  "563": {
+    "inputs": {
+      "images": [
+        "561",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "564": {
+    "inputs": {
+      "model": [
+        "549",
+        0
+      ]
+    },
+    "class_type": "DifferentialDiffusion",
+    "_meta": {
+      "title": "Differential Diffusion"
+    }
+  },
+  "567": {
+    "inputs": {
+      "text": "BR70/3D"
+    },
+    "class_type": "TextBox",
+    "_meta": {
+      "title": "Text Box"
+    }
+  },
+  "575": {
+    "inputs": {
+      "text": "Jacket_4x"
+    },
+    "class_type": "TextBox",
+    "_meta": {
+      "title": "Text Box"
+    }
+  },
+  "578": {
+    "inputs": {
+      "text": "UV_Jacket_Diffuse_2X\n"
+    },
+    "class_type": "TextBox",
+    "_meta": {
+      "title": "Text Box"
+    }
+  },
+  "579": {
+    "inputs": {
+      "text": "UV_Jacket_Normals_2X\n"
+    },
+    "class_type": "TextBox",
+    "_meta": {
+      "title": "Text Box"
+    }
+  },
+  "581": {
+    "inputs": {
+      "text": "UV_Jacket_Height_2X\n"
+    },
+    "class_type": "TextBox",
+    "_meta": {
+      "title": "Text Box"
+    }
+  },
+  "583": {
+    "inputs": {
+      "text": "Jacket_Textured\n"
+    },
+    "class_type": "TextBox",
+    "_meta": {
+      "title": "Text Box"
+    }
+  },
+  "587": {
+    "inputs": {
+      "delimiter": "/",
+      "clean_whitespace": "true",
+      "text_a": [
+        "567",
+        0
+      ],
+      "text_b": [
+        "590",
+        0
+      ],
+      "text_c": [
+        "591",
+        0
+      ],
+      "text_d": [
+        "575",
+        0
+      ]
+    },
+    "class_type": "Text Concatenate",
+    "_meta": {
+      "title": "Text Concatenate"
+    }
+  },
+  "590": {
+    "inputs": {
+      "text": "Jacket"
+    },
+    "class_type": "TextBox",
+    "_meta": {
+      "title": "Text Box"
+    }
+  },
+  "591": {
+    "inputs": {
+      "text": "07"
+    },
+    "class_type": "TextBox",
+    "_meta": {
+      "title": "Text Box"
+    }
+  },
+  "592": {
+    "inputs": {
+      "delimiter": "/",
+      "clean_whitespace": "true",
+      "text_a": [
+        "567",
+        0
+      ],
+      "text_b": [
+        "590",
+        0
+      ],
+      "text_c": [
+        "591",
+        0
+      ],
+      "text_d": [
+        "578",
+        0
+      ]
+    },
+    "class_type": "Text Concatenate",
+    "_meta": {
+      "title": "Text Concatenate"
+    }
+  },
+  "594": {
+    "inputs": {
+      "delimiter": "/",
+      "clean_whitespace": "true",
+      "text_a": [
+        "567",
+        0
+      ],
+      "text_b": [
+        "590",
+        0
+      ],
+      "text_c": [
+        "591",
+        0
+      ],
+      "text_d": [
+        "579",
+        0
+      ]
+    },
+    "class_type": "Text Concatenate",
+    "_meta": {
+      "title": "Text Concatenate"
+    }
+  },
+  "595": {
+    "inputs": {
+      "delimiter": "/",
+      "clean_whitespace": "true",
+      "text_a": [
+        "567",
+        0
+      ],
+      "text_b": [
+        "590",
+        0
+      ],
+      "text_c": [
+        "591",
+        0
+      ],
+      "text_d": [
+        "581",
+        0
+      ]
+    },
+    "class_type": "Text Concatenate",
+    "_meta": {
+      "title": "Text Concatenate"
+    }
+  },
+  "597": {
+    "inputs": {
+      "delimiter": "/",
+      "clean_whitespace": "true",
+      "text_a": [
+        "567",
+        0
+      ],
+      "text_b": [
+        "590",
+        0
+      ],
+      "text_c": [
+        "591",
+        0
+      ],
+      "text_d": [
+        "583",
+        0
+      ]
+    },
+    "class_type": "Text Concatenate",
+    "_meta": {
+      "title": "Text Concatenate"
+    }
+  },
+  "598": {
+    "inputs": {
+      "batch_index": 2,
+      "length": 1,
+      "image": [
+        "350",
+        0
+      ]
+    },
+    "class_type": "ImageFromBatch",
+    "_meta": {
+      "title": "ImageFromBatch"
+    }
+  },
+  "599": {
+    "inputs": {
+      "filename_prefix": [
+        "587",
+        0
+      ],
+      "images": [
+        "598",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "605": {
+    "inputs": {
+      "text": "ultra-realistic photography, high-resolution detail, accurate color rendering, sharp fabric texture, visible stitching, natural lighting, smooth gradients, balanced exposure, crisp edges, noise-free, true-to-life realism"
+    },
+    "class_type": "TextBox",
+    "_meta": {
+      "title": "Style Prompt"
+    }
+  },
+  "606": {
+    "inputs": {
+      "text": "brown bomber jacket, displayed front-facing, centered in frame, straight-on view, front zipper closure, ribbed collar cuffs and hem, two diagonal side pockets, long sleeves, casual menswear outerwear"
+    },
+    "class_type": "TextBox",
+    "_meta": {
+      "title": "Subject Prompt"
+    }
+  },
+  "607": {
+    "inputs": {
+      "image": "",
+      "block": false,
+      "restore_mask": "never",
+      "images": [
+        "381",
+        0
+      ]
+    },
+    "class_type": "PreviewBridge",
+    "_meta": {
+      "title": "Preview Bridge (Image)"
+    }
+  },
+  "608": {
+    "inputs": {
+      "image": "",
+      "block": false,
+      "restore_mask": "never",
+      "images": [
+        "226",
+        0
+      ]
+    },
+    "class_type": "PreviewBridge",
+    "_meta": {
+      "title": "Multiview Preview"
+    }
+  },
+  "609": {
+    "inputs": {
+      "image": "",
+      "block": false,
+      "restore_mask": "never",
+      "images": [
+        "104",
+        0
+      ]
+    },
+    "class_type": "PreviewBridge",
+    "_meta": {
+      "title": "Diffuse UV Preview"
+    }
+  },
+  "610": {
+    "inputs": {
+      "image": "",
+      "block": false,
+      "restore_mask": "never",
+      "images": [
+        "373",
+        0
+      ]
+    },
+    "class_type": "PreviewBridge",
+    "_meta": {
+      "title": "Normal UV Preview"
+    }
+  },
+  "611": {
+    "inputs": {
+      "image": "",
+      "block": false,
+      "restore_mask": "never",
+      "images": [
+        "454",
+        0
+      ]
+    },
+    "class_type": "PreviewBridge",
+    "_meta": {
+      "title": "Height UV Preview"
+    }
+  },
+  "613": {
+    "inputs": {
+      "model_file": [
+        "99",
+        0
+      ],
+      "image": ""
+    },
+    "class_type": "Preview3D",
+    "_meta": {
+      "title": "Preview 3D"
+    }
+  },
+  "614": {
+    "inputs": {
+      "model_file": [
+        "525",
+        0
+      ],
+      "image": ""
+    },
+    "class_type": "Preview3D",
+    "_meta": {
+      "title": "Mesh Preview"
+    }
+  },
+  "615": {
+    "inputs": {
+      "image": "",
+      "block": false,
+      "restore_mask": "never",
+      "images": [
+        "181",
+        0
+      ]
+    },
+    "class_type": "PreviewBridge",
+    "_meta": {
+      "title": "Front View Preview"
+    }
+  }
+}
