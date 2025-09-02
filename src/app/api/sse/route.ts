@@ -1,8 +1,6 @@
 import { NextRequest } from 'next/server';
 import { createServer } from '@/lib/supabase-server';
-
-// Store active SSE connections by user ID
-const connections = new Map<string, WritableStreamDefaultWriter>();
+import { addSSEConnection, removeSSEConnection } from '@/lib/sse-utils';
 
 export async function GET(request: NextRequest) {
   const supabase = createServer();
@@ -29,12 +27,12 @@ export async function GET(request: NextRequest) {
           controller.enqueue(chunk);
         },
         close() {
-          connections.delete(userId);
+          removeSSEConnection(userId);
           controller.close();
         }
       }).getWriter();
 
-      connections.set(userId, writer);
+      addSSEConnection(userId, writer);
 
       // Keep connection alive with heartbeat
       const heartbeat = setInterval(() => {
@@ -44,14 +42,14 @@ export async function GET(request: NextRequest) {
         } catch (error) {
           console.error('SSE heartbeat error:', error);
           clearInterval(heartbeat);
-          connections.delete(userId);
+          removeSSEConnection(userId);
         }
       }, 30000); // Every 30 seconds
 
       // Clean up on connection close
       request.signal.addEventListener('abort', () => {
         clearInterval(heartbeat);
-        connections.delete(userId);
+        removeSSEConnection(userId);
         try {
           controller.close();
         } catch (error) {
@@ -72,35 +70,4 @@ export async function GET(request: NextRequest) {
   });
 }
 
-// Function to send SSE message to a specific user
-export function sendSSEToUser(userId: string, data: any) {
-  const connection = connections.get(userId);
-  if (connection) {
-    try {
-      const encoder = new TextEncoder();
-      const message = `data: ${JSON.stringify(data)}\n\n`;
-      connection.write(encoder.encode(message));
-      console.log(`SSE: Sent message to user ${userId}:`, data);
-    } catch (error) {
-      console.error(`SSE: Error sending to user ${userId}:`, error);
-      connections.delete(userId);
-    }
-  } else {
-    console.log(`SSE: No active connection for user ${userId}`);
-  }
-}
-
-// Function to broadcast to all connected users (optional)
-export function broadcastSSE(data: any) {
-  const encoder = new TextEncoder();
-  const message = `data: ${JSON.stringify(data)}\n\n`;
-  
-  for (const [userId, connection] of connections.entries()) {
-    try {
-      connection.write(encoder.encode(message));
-    } catch (error) {
-      console.error(`SSE: Error broadcasting to user ${userId}:`, error);
-      connections.delete(userId);
-    }
-  }
-}
+// Helper functions moved to separate module to avoid Next.js route export conflicts
