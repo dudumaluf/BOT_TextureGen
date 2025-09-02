@@ -1,6 +1,6 @@
 "use client";
 
-import { useAppStore } from "@/store/appStore";
+import { useAppStore, type GenerationRecord } from "@/store/appStore";
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 import { motion } from "framer-motion";
@@ -21,7 +21,7 @@ export default function GalleryPanel() {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
 
-  const handleAddToUpgradeQueue = async (generation: any) => {
+  const handleAddToUpgradeQueue = async (generation: GenerationRecord) => {
     if (generation.status !== 'completed') {
       toast.error("Can only upgrade completed generations");
       return;

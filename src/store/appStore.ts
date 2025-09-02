@@ -1,13 +1,21 @@
 import { create } from 'zustand'
 
-interface TextureOutput {
+export interface TextureOutput {
   diffuse: string | null;
   normal: string | null;
   height: string | null;
   thumbnail: string | null;
 }
 
-interface GenerationRecord {
+export interface ModelRecord {
+  id: string;
+  name: string;
+  storage_path: string;
+  user_id: string;
+  created_at?: string;
+}
+
+export interface GenerationRecord {
   id: string;
   status: string;
   subject_prompt?: string;
@@ -20,9 +28,12 @@ interface GenerationRecord {
   thumbnail_storage_path?: string;
   high_quality?: boolean;
   created_at?: string;
+  model_id?: string;
+  user_id?: string;
+  model?: ModelRecord; // Relational data from Supabase joins
 }
 
-interface QueueItem {
+export interface QueueItem {
   id: string;
   type: 'generation' | 'upgrade';
   modelFileName: string | null;
