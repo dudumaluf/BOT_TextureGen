@@ -89,7 +89,7 @@ export default function SettingsModal() {
       await supabase.auth.signOut();
       toast.success("Signed out successfully");
       router.push('/login');
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Error signing out");
       console.error("Sign out error:", error);
     }

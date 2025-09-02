@@ -1,9 +1,49 @@
 import { create } from 'zustand'
 
+interface TextureOutput {
+  diffuse: string | null;
+  normal: string | null;
+  height: string | null;
+  thumbnail: string | null;
+}
+
+interface GenerationRecord {
+  id: string;
+  status: string;
+  subject_prompt?: string;
+  style_prompt?: string;
+  seed: number;
+  reference_image_path?: string;
+  diffuse_storage_path?: string;
+  normal_storage_path?: string;
+  height_storage_path?: string;
+  thumbnail_storage_path?: string;
+  high_quality?: boolean;
+  created_at?: string;
+}
+
+interface QueueItem {
+  id: string;
+  type: 'generation' | 'upgrade';
+  modelFileName: string;
+  modelId: string;
+  referenceImageUrl: string;
+  referenceImageName: string;
+  mainPrompt: string;
+  selectedStyle: string;
+  seed: number;
+  referenceStrength: number;
+  highQuality: boolean;
+  status: string;
+  originalId?: string;
+  subject_prompt?: string;
+  thumbnail_storage_path?: string;
+}
+
 interface GenerationPair {
   id: string;
-  fastGeneration?: any;
-  hqGeneration?: any;
+  fastGeneration?: GenerationRecord;
+  hqGeneration?: GenerationRecord;
   canUpgrade: boolean;
   isUpgrading: boolean;
   currentTextures: {
@@ -56,12 +96,12 @@ interface AppState {
     thumbnail: string | null;
   };
   currentGeneration: GenerationPair | null; // Current generation pair
-  generationQueue: any[]; // Background queue (both generations and upgrades)
+  generationQueue: QueueItem[]; // Background queue (both generations and upgrades)
   queueCount: number; // Number of items in queue
   isBottomBarOpen: boolean; // Bottom control bar visibility
   isSettingsOpen: boolean; // Settings panel visibility
   isGalleryOpen: boolean;
-  generations: any[]; // Holds the list of past generations
+  generations: GenerationRecord[]; // Holds the list of past generations
   setModelUrl: (url: string | null) => void;
   setModelId: (id: string | null) => void;
   setModelFileName: (name: string | null) => void;
@@ -87,13 +127,13 @@ interface AppState {
   setCurrentGeneration: (generation: GenerationPair | null) => void;
   setCanUpgrade: (canUpgrade: boolean) => void;
   setIsUpgrading: (isUpgrading: boolean) => void;
-  addToQueue: (item: any) => void;
+  addToQueue: (item: QueueItem) => void;
   removeFromQueue: (itemId: string) => void;
   toggleGallery: () => void;
   toggleBottomBar: () => void;
   toggleSettings: () => void;
-  setGenerations: (generations: any[]) => void;
-  loadGeneration: (generation: any) => void;
+  setGenerations: (generations: GenerationRecord[]) => void;
+  loadGeneration: (generation: GenerationRecord) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({

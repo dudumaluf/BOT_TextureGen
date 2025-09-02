@@ -163,9 +163,9 @@ export default function ControlPanel() {
       } else {
         throw new Error(result.error || 'File upload failed');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error uploading file:", error);
-      toast.error(error.message || "Failed to upload model.");
+      toast.error(error instanceof Error ? error.message : "Failed to upload model.");
     } finally {
       setIsLoading(false);
     }
@@ -197,9 +197,9 @@ export default function ControlPanel() {
       } else {
         throw new Error(result.error || 'Image upload failed');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error uploading image:", error);
-      toast.error(error.message || "Failed to upload image.");
+      toast.error(error instanceof Error ? error.message : "Failed to upload image.");
     } finally {
       setIsLoading(false);
     }
@@ -260,9 +260,9 @@ export default function ControlPanel() {
         console.log(`Generation: Started generation ${generationId} - ${actualQuality ? 'quality' : 'fast'} mode`);
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error starting generation:", error);
-      toast.error(error.message || "Failed to generate textures.");
+      toast.error(error instanceof Error ? error.message : "Failed to generate textures.");
       setIsLoading(false);
     }
   };
@@ -430,7 +430,7 @@ export default function ControlPanel() {
           setIsLoading(false);
           toast.success(`Loaded: ${latest.subject_prompt || 'Latest generation'}`);
           
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error("Error checking latest generation:", error);
           toast.error("Failed to check latest generation");
         }
