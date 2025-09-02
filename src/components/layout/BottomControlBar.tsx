@@ -17,8 +17,7 @@ import {
   Sparkles,
   X,
   Timer,
-  Box,
-  Cube
+  Box
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import UpgradeButton from "@/components/ui/upgrade-button";
