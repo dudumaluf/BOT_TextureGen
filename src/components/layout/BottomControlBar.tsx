@@ -95,10 +95,10 @@ export default function BottomControlBar() {
             console.log(`Polling: Current generation ${currentGenerationId} completed!`);
             
             const textureData = {
-              diffuse: generation.diffuse_storage_path,
-              normal: generation.normal_storage_path,
-              height: generation.height_storage_path,
-              thumbnail: generation.thumbnail_storage_path
+              diffuse: generation.diffuse_storage_path || null,
+              normal: generation.normal_storage_path || null,
+              height: generation.height_storage_path || null,
+              thumbnail: generation.thumbnail_storage_path || null
             };
             
             setGeneratedTextures(textureData);

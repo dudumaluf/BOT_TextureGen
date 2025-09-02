@@ -71,10 +71,10 @@ export default function ControlPanel() {
             console.log(`Polling: Current generation ${currentGenerationId} completed!`);
             
             const textureData = {
-              diffuse: generation.diffuse_storage_path,
-              normal: generation.normal_storage_path,
-              height: generation.height_storage_path,
-              thumbnail: generation.thumbnail_storage_path
+              diffuse: generation.diffuse_storage_path || null,
+              normal: generation.normal_storage_path || null,
+              height: generation.height_storage_path || null,
+              thumbnail: generation.thumbnail_storage_path || null
             };
             
             setGeneratedTextures(textureData);
@@ -419,10 +419,10 @@ export default function ControlPanel() {
           console.log("Latest completed generation:", latest);
           
           const textureData = {
-            diffuse: latest.diffuse_storage_path,
-            normal: latest.normal_storage_path,
-            height: latest.height_storage_path,
-            thumbnail: latest.thumbnail_storage_path
+            diffuse: latest.diffuse_storage_path || null,
+            normal: latest.normal_storage_path || null,
+            height: latest.height_storage_path || null,
+            thumbnail: latest.thumbnail_storage_path || null
           };
           
           console.log("Setting textures:", textureData);
