@@ -31,14 +31,17 @@ export default function GalleryPanel() {
       ...generation,
       type: 'upgrade' as const,
       originalId: generation.id,
-      mainPrompt: generation.subject_prompt,
+      mainPrompt: generation.subject_prompt || 'Untitled Generation',
       selectedStyle: generation.style_prompt || 'photorealistic',
       referenceStrength: 0.7, // Default for upgrades
       // Preserve all original generation data
-      modelFileName: generation.model?.name,
-      modelId: generation.model_id,
-      referenceImageUrl: generation.reference_image_path,
-      referenceImageName: generation.model?.name // This might need adjustment
+      modelFileName: generation.model?.name || null,
+      modelId: generation.model_id || null,
+      referenceImageUrl: generation.reference_image_path || '',
+      referenceImageName: generation.model?.name || null,
+      seed: generation.seed || 0,
+      highQuality: true, // Upgrades are always high quality
+      status: 'queued'
     });
     
     toast.success(`Added "${generation.subject_prompt || 'Generation'}" to upgrade queue`);
@@ -146,12 +149,12 @@ export default function GalleryPanel() {
       const { data, error } = await supabase
         .from('generations')
         .select('*, model:models(*)')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as { data: GenerationRecord[] | null, error: any };
       
       if (error) {
         console.error("Error fetching generations:", error);
       } else {
-        setGenerations(data);
+        setGenerations(data || []);
       }
     };
     fetchGenerations();

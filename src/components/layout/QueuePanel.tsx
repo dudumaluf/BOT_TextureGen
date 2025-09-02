@@ -1,6 +1,6 @@
 "use client";
 
-import { useAppStore } from "@/store/appStore";
+import { useAppStore, type GenerationRecord } from "@/store/appStore";
 import { motion } from "framer-motion";
 import { Clock, X, ArrowUp, Zap } from "lucide-react";
 import { toast } from "sonner";
@@ -89,7 +89,7 @@ export default function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
                     .from('generations')
                     .select('status')
                     .eq('id', generationId)
-                    .single();
+                    .single() as { data: { status: string } | null };
                   
                   if (generation && (generation.status === 'completed' || generation.status === 'failed')) {
                     clearInterval(pollInterval);
@@ -116,7 +116,7 @@ export default function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
           const { data: updatedGenerations } = await supabase
             .from('generations')
             .select('*, model:models(*)')
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false }) as { data: GenerationRecord[] | null };
           
           if (updatedGenerations) {
             setGenerations(updatedGenerations);

@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAppStore } from "@/store/appStore";
+import { useAppStore, type GenerationRecord } from "@/store/appStore";
 import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -65,7 +65,7 @@ export default function ControlPanel() {
             .from('generations')
             .select('*')
             .eq('id', currentGenerationId)
-            .single();
+            .single() as { data: GenerationRecord | null, error: any };
           
           if (!error && generation && generation.status === 'completed') {
             console.log(`Polling: Current generation ${currentGenerationId} completed!`);
@@ -408,7 +408,7 @@ export default function ControlPanel() {
             .select('*')
             .eq('status', 'completed')
             .order('created_at', { ascending: false })
-            .limit(1);
+            .limit(1) as { data: GenerationRecord[] | null, error: any };
           
           if (error || !generations || generations.length === 0) {
             toast.info("No completed generations found");

@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAppStore } from "@/store/appStore";
+import { useAppStore, type GenerationRecord } from "@/store/appStore";
 import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -89,7 +89,7 @@ export default function BottomControlBar() {
             .from('generations')
             .select('*')
             .eq('id', currentGenerationId)
-            .single();
+            .single() as { data: GenerationRecord | null, error: any };
           
           if (!error && generation && generation.status === 'completed') {
             console.log(`Polling: Current generation ${currentGenerationId} completed!`);
