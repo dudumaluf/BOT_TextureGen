@@ -528,7 +528,7 @@ export default function BottomControlBar() {
                   onClick={() => {
                     const queueItem = {
                       id: Date.now().toString(),
-                      type: 'generation',
+                      type: 'generation' as const,
                       modelFileName,
                       modelId,
                       referenceImageUrl,

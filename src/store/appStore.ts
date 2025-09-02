@@ -25,10 +25,10 @@ interface GenerationRecord {
 interface QueueItem {
   id: string;
   type: 'generation' | 'upgrade';
-  modelFileName: string;
-  modelId: string;
+  modelFileName: string | null;
+  modelId: string | null;
   referenceImageUrl: string;
-  referenceImageName: string;
+  referenceImageName: string | null;
   mainPrompt: string;
   selectedStyle: string;
   seed: number;

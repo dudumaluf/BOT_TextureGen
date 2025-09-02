@@ -29,7 +29,7 @@ export default function GalleryPanel() {
     
     addToQueue({
       ...generation,
-      type: 'upgrade',
+      type: 'upgrade' as const,
       originalId: generation.id,
       mainPrompt: generation.subject_prompt,
       selectedStyle: generation.style_prompt || 'photorealistic',
