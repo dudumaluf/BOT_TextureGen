@@ -61,16 +61,22 @@ export default function UpgradeButton() {
       // Update current generation with HQ info
       setCurrentGeneration({
         ...currentGeneration,
-        hqGeneration: { id: result.generationId, status: 'processing' },
+        hqGeneration: { 
+          id: result.generationId, 
+          status: 'processing',
+          seed: seed || 0,
+          subject_prompt: mainPrompt,
+          style_prompt: selectedStyle
+        },
         isUpgrading: true,
         canUpgrade: false
       });
 
       toast.success("High Quality upgrade started! You'll be notified when ready.");
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error starting upgrade:", error);
-      toast.error(error.message || "Failed to start upgrade");
+      toast.error(error instanceof Error ? error.message : "Failed to start upgrade");
       setIsUpgrading(false);
     }
   };
