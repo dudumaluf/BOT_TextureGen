@@ -62,6 +62,8 @@ export default function IntroAnimation({ onComplete, type }: IntroAnimationProps
                 height={120}
                 className="invert"
                 style={{ filter: 'invert(1)' }}
+                priority
+                unoptimized
               />
             </div>
           </motion.div>
@@ -77,11 +79,13 @@ export default function IntroAnimation({ onComplete, type }: IntroAnimationProps
             className="flex items-center justify-center"
           >
             <Image
-              src="/logo_texturegen_white_on_transparent.png"
+              src="/logo_texturegen_white_on_transparent_.png"
               alt="TextureGen Logo"
               width={200}
               height={200}
               className="object-contain"
+              priority
+              unoptimized
             />
           </motion.div>
         )}

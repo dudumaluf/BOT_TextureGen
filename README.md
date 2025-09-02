@@ -9,10 +9,14 @@ AUTOMATA is an innovative web application that revolutionizes the 3D texturing w
 - **🎨 AI Texture Generation**: Generate diffuse, normal, and height maps using advanced AI models
 - **🖼️ Interactive 3D Viewer**: Real-time preview with React Three Fiber
 - **📱 Modern UI**: Beautiful sidebar layout with smooth animations powered by Framer Motion
+- **🎬 Intro Animations**: Professional company logo and app branding animations
+- **🌓 Dark/Light Theme**: Complete theme system with proper color consistency
 - **🔐 Secure Authentication**: User management with Supabase Auth
-- **📚 Generation Gallery**: View and manage your texture generation history
+- **📚 Generation Gallery**: View and manage your texture generation history with advanced controls
+- **⚙️ Advanced Settings**: Customizable style templates and generation parameters
 - **☁️ Cloud Storage**: Automatic upload to Supabase Storage for production deployment
 - **🔄 Real-time Updates**: Webhook-based system for instant texture delivery
+- **⚡ Progressive Enhancement**: Fast preview mode with optional high-quality upgrades
 
 ## 🏗️ Architecture
 
@@ -221,7 +225,10 @@ Optimized for both development speed and production scalability:
 Modern interface built for production use:
 - **Sidebar Layout** - Clean separation of controls and 3D viewer
 - **Framer Motion Animations** - Smooth, professional transitions
+- **Intro Animation System** - Professional company and app branding
+- **Dark/Light Theme Support** - Complete theme system with proper color consistency
 - **Modal Gallery System** - Beautiful grid-based generation history
+- **Advanced Settings Panel** - Customizable style templates and parameters
 - **Real-Time Asset Preview** - Live texture thumbnails and previews
 
 ## 📁 Project Structure

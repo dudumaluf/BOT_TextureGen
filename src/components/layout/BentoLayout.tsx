@@ -116,18 +116,20 @@ export default function BentoLayout() {
 
         {/* Always-Visible Toggle Buttons */}
         
-        {/* TextureGen Logo - Top Right */}
+        {/* TextureGen Logo - Top Left */}
         <motion.div
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="absolute top-4 right-4 pointer-events-auto"
+          className="absolute top-1 left-1 pointer-events-auto z-40"
         >
           <Image
-            src={theme === 'dark' ? '/logo_texturegen_white_on_transparent.png' : '/logo_texturegen_black_on_transparent.png'}
+            src={theme === 'dark' ? '/logo_texturegen_white_on_transparent_.png' : '/logo_texturegen_black_on_transparent.png'}
             alt="TextureGen"
-            width={32}
-            height={32}
+            width={115}
+            height={115}
             className="object-contain"
+            priority
+            unoptimized
           />
         </motion.div>
 
@@ -169,21 +171,15 @@ export default function BentoLayout() {
           </motion.button>
         )}
 
-        {/* Queue Toggle - Always visible, with badge when items present */}
+        {/* Queue Toggle - Top Right */}
         {!showQueuePanel && (
           <motion.button
-            initial={{ x: 50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
+            initial={{ y: -50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsQueueOpen(true)}
-            className={`absolute top-1/2 right-4 transform -translate-y-1/2 z-40 p-3 backdrop-blur-md rounded-full shadow-lg border transition-all pointer-events-auto ${
-              queueCount > 0 
-                ? 'bg-orange-500/90 border-orange-400 text-white hover:bg-orange-600' 
-                : theme === 'dark'
-                  ? 'bg-gray-800/90 border-gray-700 text-gray-300 hover:text-purple-400'
-                  : 'bg-white/90 border-white/20 text-gray-600 hover:text-purple-600'
-            }`}
+            className={`absolute top-4 right-4 z-40 ${getButtonStyle(queueCount > 0 ? 'bg-orange-600' : 'text-purple-600')}`}
             title={queueCount > 0 ? `Open Queue (${queueCount} items)` : "Open Queue"}
           >
             <Layers className="h-5 w-5" />
@@ -199,14 +195,14 @@ export default function BentoLayout() {
           </motion.button>
         )}
 
-        {/* Settings Toggle - Top Right (below logo) */}
+        {/* Settings Toggle - Bottom Right */}
         <motion.button
-          initial={{ y: -50, opacity: 0 }}
+          initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={toggleSettings}
-          className={`absolute top-20 right-4 z-40 ${getButtonStyle('text-purple-600')}`}
+          className={`absolute bottom-4 right-4 z-40 ${getButtonStyle('text-purple-600')}`}
           title="Settings"
         >
           <Settings className="h-5 w-5" />
@@ -236,10 +232,10 @@ export default function BentoLayout() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="absolute bottom-0 z-30 transition-all duration-500"
+            className="absolute bottom-0 z-20 transition-all duration-500"
             style={{
-              left: (isGalleryOpen || isSceneOpen) ? '288px' : '24px',
-              right: showQueuePanel ? '320px' : '24px',
+              left: (isGalleryOpen || isSceneOpen) ? '288px' : '80px', // More clearance from left edge
+              right: showQueuePanel ? '320px' : '80px', // More clearance from right edge  
               bottom: '32px'
             }}
           >
