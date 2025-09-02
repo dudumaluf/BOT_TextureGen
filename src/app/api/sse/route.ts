@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server';
 import { createServer } from '@/lib/supabase-server';
-import { addSSEConnection, removeSSEConnection } from '@/lib/sse-utils';
+
+// Store active SSE connections by user ID
+const connections = new Map<string, WritableStreamDefaultWriter>();
 
 export async function GET(request: NextRequest) {
   const supabase = createServer();
@@ -27,12 +29,12 @@ export async function GET(request: NextRequest) {
           controller.enqueue(chunk);
         },
         close() {
-          removeSSEConnection(userId);
+          connections.delete(userId);
           controller.close();
         }
       }).getWriter();
 
-      addSSEConnection(userId, writer);
+      connections.set(userId, writer);
 
       // Keep connection alive with heartbeat
       const heartbeat = setInterval(() => {
@@ -42,14 +44,14 @@ export async function GET(request: NextRequest) {
         } catch (error) {
           console.error('SSE heartbeat error:', error);
           clearInterval(heartbeat);
-          removeSSEConnection(userId);
+          connections.delete(userId);
         }
       }, 30000); // Every 30 seconds
 
       // Clean up on connection close
       request.signal.addEventListener('abort', () => {
         clearInterval(heartbeat);
-        removeSSEConnection(userId);
+        connections.delete(userId);
         try {
           controller.close();
         } catch (error) {
