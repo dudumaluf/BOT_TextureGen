@@ -31,29 +31,36 @@ export default function AuthForm() {
   };
 
   return (
-    <div className="w-full max-w-sm space-y-4">
-      <h1 className="text-2xl font-bold">{isSignUp ? "Create an Account" : "Sign In"}</h1>
-      <div className="space-y-2">
+    <div className="w-full max-w-xs space-y-6">
+      <div className="space-y-4">
         <Input
           type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          className="bg-black border-gray-600 text-white placeholder:text-gray-500 focus:border-gray-400 focus:ring-0 focus:ring-offset-0"
         />
         <Input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          className="bg-black border-gray-600 text-white placeholder:text-gray-500 focus:border-gray-400 focus:ring-0 focus:ring-offset-0"
         />
       </div>
-      <Button onClick={handleAuthAction} className="w-full">
+      <Button 
+        onClick={handleAuthAction} 
+        className="w-full bg-gray-800 text-white hover:bg-gray-700 border-gray-600"
+      >
         {isSignUp ? "Sign Up" : "Sign In"}
       </Button>
-      {error && <p className="text-sm text-red-500">{error}</p>}
-      <Button variant="link" onClick={() => setIsSignUp(!isSignUp)} className="w-full">
+      {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+      <button 
+        onClick={() => setIsSignUp(!isSignUp)} 
+        className="w-full text-gray-500 hover:text-gray-300 transition-colors text-sm"
+      >
         {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
-      </Button>
+      </button>
     </div>
   );
 }

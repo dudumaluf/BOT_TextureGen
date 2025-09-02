@@ -18,8 +18,14 @@ export default function Model() {
 function ModelRenderer({ modelUrl }: { modelUrl: string }) {
   const { scene } = useGLTF(modelUrl);
   const generatedTextures = useAppStore((state) => state.generatedTextures);
+  const materialSettings = useAppStore((state) => state.materialSettings);
+  const objectScale = useAppStore((state) => state.objectScale);
 
-  const sceneClone = useMemo(() => scene.clone(), [scene]);
+  const sceneClone = useMemo(() => {
+    const clone = scene.clone();
+    clone.scale.setScalar(objectScale);
+    return clone;
+  }, [scene, objectScale]);
 
   useEffect(() => {
     console.log("Model: Generated textures state", generatedTextures);
@@ -48,12 +54,20 @@ function ModelRenderer({ modelUrl }: { modelUrl: string }) {
     sceneClone.traverse((child) => {
       if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
         child.material.map = diffuseMap;
-        if (normalMap) child.material.normalMap = normalMap;
-        if (heightMap) child.material.displacementMap = heightMap;
+        if (normalMap) {
+          child.material.normalMap = normalMap;
+          child.material.normalScale.set(materialSettings.normalScale, materialSettings.normalScale);
+        }
+        if (heightMap) {
+          child.material.displacementMap = heightMap;
+          child.material.displacementScale = materialSettings.displacementScale;
+        }
+        child.material.metalness = materialSettings.metalness;
+        child.material.roughness = materialSettings.roughness;
         child.material.needsUpdate = true;
       }
     });
-  }, [generatedTextures, sceneClone]);
+  }, [generatedTextures, sceneClone, materialSettings]);
 
   return <primitive object={sceneClone} />;
 }

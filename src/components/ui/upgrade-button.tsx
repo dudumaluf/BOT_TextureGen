@@ -15,9 +15,10 @@ export default function UpgradeButton() {
     modelId,
     referenceImageUrl,
     referenceImageName,
-    stylePrompt,
-    subjectPrompt,
-    seed
+    mainPrompt,
+    selectedStyle,
+    seed,
+    referenceStrength
   } = useAppStore();
 
   if (!currentGeneration?.canUpgrade || currentGeneration?.isUpgrading) {
@@ -43,10 +44,11 @@ export default function UpgradeButton() {
           modelId,
           referenceImageUrl,
           referenceImageName,
-          stylePrompt,
-          subjectPrompt,
+          mainPrompt,
+          selectedStyle,
           seed,
           highQuality: true, // Force high quality
+          referenceStrength,
           parentId: currentGeneration.fastGeneration?.id // Link to fast generation
         }),
       });

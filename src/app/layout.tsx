@@ -5,7 +5,7 @@ import { Toaster } from 'sonner';
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AUTOMATA",
+  title: "TextureGen",
   description: "Generate textures for your 3D models using AI.",
 };
 

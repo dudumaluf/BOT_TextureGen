@@ -1,12 +1,11 @@
 "use client";
 
 import { useAppStore } from "@/store/appStore";
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 import { motion } from "framer-motion";
-import { ArrowUp, X, Grid3X3, Grid2X2, LayoutGrid } from "lucide-react";
+import { ArrowUp, X, Grid3X3, Grid2X2, LayoutGrid, Trash2, CheckSquare, Square, Check } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
 
 export default function GalleryPanel() {
   const { 
@@ -14,10 +13,13 @@ export default function GalleryPanel() {
     setGenerations, 
     loadGeneration, 
     toggleGallery,
-    addToQueue
+    addToQueue,
+    theme
   } = useAppStore();
   const supabase = createClient();
   const [gridSize, setGridSize] = useState<'small' | 'medium' | 'large'>('medium');
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   const handleAddToUpgradeQueue = async (generation: any) => {
     if (generation.status !== 'completed') {
@@ -28,11 +30,116 @@ export default function GalleryPanel() {
     addToQueue({
       ...generation,
       type: 'upgrade',
-      originalId: generation.id
+      originalId: generation.id,
+      mainPrompt: generation.subject_prompt,
+      selectedStyle: generation.style_prompt || 'photorealistic',
+      referenceStrength: 0.7, // Default for upgrades
+      // Preserve all original generation data
+      modelFileName: generation.model?.name,
+      modelId: generation.model_id,
+      referenceImageUrl: generation.reference_image_path,
+      referenceImageName: generation.model?.name // This might need adjustment
     });
     
     toast.success(`Added "${generation.subject_prompt || 'Generation'}" to upgrade queue`);
   };
+
+  const toggleSelection = (generationId: string) => {
+    setSelectedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(generationId)) {
+        newSet.delete(generationId);
+      } else {
+        newSet.add(generationId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAll = () => {
+    setSelectedItems(new Set(generations.map(gen => gen.id)));
+  };
+
+  const clearSelection = () => {
+    setSelectedItems(new Set());
+    setIsSelectionMode(false);
+  };
+
+  const deleteSelected = async () => {
+    if (selectedItems.size === 0) return;
+    
+    const confirmMessage = selectedItems.size === 1 
+      ? "Delete this generation?" 
+      : `Delete ${selectedItems.size} generations?`;
+      
+    if (!confirm(confirmMessage)) return;
+    
+    try {
+      const itemsArray = Array.from(selectedItems);
+      
+      // Delete from database
+      const { error } = await supabase
+        .from('generations')
+        .delete()
+        .in('id', itemsArray);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setGenerations(generations.filter(gen => !selectedItems.has(gen.id)));
+      clearSelection();
+      
+      toast.success(`Deleted ${itemsArray.length} generation(s)`);
+      
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast.error('Failed to delete generations');
+    }
+  };
+
+  const deleteAll = async () => {
+    if (generations.length === 0) return;
+    
+    if (!confirm(`Delete ALL ${generations.length} generations? This cannot be undone.`)) return;
+    
+    try {
+      const { error } = await supabase
+        .from('generations')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all (using dummy condition)
+      
+      if (error) throw error;
+      
+      setGenerations([]);
+      clearSelection();
+      
+      toast.success('All generations deleted');
+      
+    } catch (error: any) {
+      console.error('Delete all error:', error);
+      toast.error('Failed to delete all generations');
+    }
+  };
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isSelectionMode) return;
+      
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        deleteSelected();
+      } else if (e.key === 'Escape') {
+        clearSelection();
+      } else if (e.ctrlKey && e.key === 'a') {
+        e.preventDefault();
+        selectAll();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isSelectionMode, selectedItems, generations]);
 
   useEffect(() => {
     const fetchGenerations = async () => {
@@ -52,47 +159,97 @@ export default function GalleryPanel() {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header with Grid Size Controls */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
-        <h3 className="font-semibold text-gray-800">Gallery</h3>
+      {/* Header with Controls */}
+      <div className={`flex items-center justify-between p-4 border-b ${
+        theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+      }`}>
+        <div className="flex items-center gap-3">
+          <h3 className={`font-semibold ${theme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}>Gallery</h3>
+          {selectedItems.size > 0 && (
+            <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+              {selectedItems.size} selected
+            </span>
+          )}
+        </div>
         
         <div className="flex items-center gap-2">
-          {/* Grid Size Controls */}
-          <div className="flex items-center gap-1 mr-3">
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setGridSize('large')}
-              className={`p-1.5 rounded-md transition-colors ${
-                gridSize === 'large' ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'
-              }`}
-              title="Large thumbnails"
-            >
-              <Grid2X2 className="h-4 w-4" />
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setGridSize('medium')}
-              className={`p-1.5 rounded-md transition-colors ${
-                gridSize === 'medium' ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'
-              }`}
-              title="Medium thumbnails"
-            >
-              <Grid3X3 className="h-4 w-4" />
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setGridSize('small')}
-              className={`p-1.5 rounded-md transition-colors ${
-                gridSize === 'small' ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'
-              }`}
-              title="Small thumbnails"
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </motion.button>
-          </div>
+          {/* Selection Mode Controls */}
+          {isSelectionMode ? (
+            <div className="flex items-center gap-1 mr-2">
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={selectAll}
+                className="p-1.5 rounded-md text-blue-600 hover:bg-blue-100 transition-colors"
+                title="Select All (Ctrl+A)"
+              >
+                <Check className="h-4 w-4" />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={deleteSelected}
+                disabled={selectedItems.size === 0}
+                className="p-1.5 rounded-md text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50"
+                title="Delete Selected (Delete key)"
+              >
+                <Trash2 className="h-4 w-4" />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={clearSelection}
+                className="p-1.5 rounded-md text-gray-600 hover:bg-gray-100 transition-colors"
+                title="Cancel Selection (Esc)"
+              >
+                <X className="h-4 w-4" />
+              </motion.button>
+            </div>
+          ) : (
+            <>
+              {/* Management Controls */}
+              <div className="flex items-center gap-1 mr-2">
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setIsSelectionMode(true)}
+                  className="p-1.5 rounded-md text-gray-600 hover:bg-gray-100 transition-colors"
+                  title="Multi-select"
+                >
+                  <CheckSquare className="h-4 w-4" />
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={deleteAll}
+                  className="p-1.5 rounded-md text-red-600 hover:bg-red-100 transition-colors"
+                  title="Delete All"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </motion.button>
+              </div>
+
+              {/* Grid Size Toggle */}
+              <div className="flex items-center gap-1 mr-3">
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => {
+                    const sizes: ('small' | 'medium' | 'large')[] = ['small', 'medium', 'large'];
+                    const currentIndex = sizes.indexOf(gridSize);
+                    const nextIndex = (currentIndex + 1) % sizes.length;
+                    setGridSize(sizes[nextIndex]);
+                  }}
+                  className="p-1.5 rounded-md text-gray-600 hover:bg-gray-100 transition-colors"
+                  title={`Grid Size: ${gridSize} (click to cycle)`}
+                >
+                  {gridSize === 'large' && <Grid2X2 className="h-4 w-4" />}
+                  {gridSize === 'medium' && <Grid3X3 className="h-4 w-4" />}
+                  {gridSize === 'small' && <LayoutGrid className="h-4 w-4" />}
+                </motion.button>
+              </div>
+            </>
+          )}
 
           <motion.button
             whileHover={{ scale: 1.1 }}
@@ -123,15 +280,29 @@ export default function GalleryPanel() {
             gridSize === 'medium' ? 'grid-cols-2' : 
             'grid-cols-3'
           }`}>
-            {generations.map((gen, index) => (
-              <motion.div
-                key={gen.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="group relative bg-white rounded-xl p-3 border hover:border-blue-300 cursor-pointer hover:shadow-md transition-all"
-                onClick={() => loadGeneration(gen)}
-              >
+            {generations.map((gen, index) => {
+              const isSelected = selectedItems.has(gen.id);
+              return (
+                <motion.div
+                  key={gen.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className={`group relative rounded-xl p-3 border cursor-pointer hover:shadow-md transition-all duration-200 ease-out ${
+                    isSelected 
+                      ? 'bg-blue-50 border-blue-500 shadow-md' 
+                      : theme === 'dark'
+                        ? 'bg-gray-800 border-gray-700 hover:border-blue-400'
+                        : 'bg-white border-gray-200 hover:border-blue-300'
+                  }`}
+                  onClick={() => {
+                    if (isSelectionMode) {
+                      toggleSelection(gen.id);
+                    } else {
+                      loadGeneration(gen);
+                    }
+                  }}
+                >
                 {/* Thumbnail */}
                 <div className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100 mb-3">
                   {gen.thumbnail_storage_path ? (
@@ -151,7 +322,7 @@ export default function GalleryPanel() {
                 
                 {/* Info */}
                 <div className="space-y-2">
-                  <p className="text-sm font-medium truncate" title={gen.subject_prompt || ''}>
+                  <p className={`text-sm font-medium truncate ${theme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`} title={gen.subject_prompt || ''}>
                     {gen.subject_prompt || 'Untitled Generation'}
                   </p>
                   <div className="flex items-center justify-between">
@@ -169,23 +340,38 @@ export default function GalleryPanel() {
                   </div>
                 </div>
 
-                {/* Upgrade Icon - Minimalist */}
-                {gen.status === 'completed' && (
-                  <motion.button
-                    whileHover={{ scale: 1.2 }}
-                    whileTap={{ scale: 0.8 }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleAddToUpgradeQueue(gen);
-                    }}
-                    className="absolute top-2 right-2 p-1 bg-white/90 backdrop-blur-sm rounded-full shadow-sm border border-white/40 text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition-all opacity-0 group-hover:opacity-100"
-                    title="Add to Upgrade Queue"
+                {/* Selection Checkbox */}
+                {isSelectionMode && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute top-2 left-2 z-10"
                   >
-                    <ArrowUp className="h-3 w-3" />
-                  </motion.button>
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                      isSelected 
+                        ? 'bg-blue-500 border-blue-500' 
+                        : 'bg-white border-gray-300'
+                    }`}>
+                      {isSelected && <CheckSquare className="h-3 w-3 text-white" />}
+                    </div>
+                  </motion.div>
                 )}
+
+                {/* Quality Indicator */}
+                <div className={`absolute top-2 flex items-center gap-1 ${isSelectionMode ? 'right-2' : 'left-2'}`}>
+                  <span className={`px-1.5 py-0.5 text-xs font-bold rounded ${
+                    gen.high_quality 
+                      ? 'bg-green-500 text-white' 
+                      : 'bg-orange-500 text-white'
+                  }`}>
+                    {gen.high_quality ? 'HQ' : 'LQ'}
+                  </span>
+                </div>
+
+
               </motion.div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

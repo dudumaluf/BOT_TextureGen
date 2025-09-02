@@ -9,9 +9,9 @@ const getWorkflowCopy = () => JSON.parse(JSON.stringify(workflow));
 
 export async function POST(request: Request) {
   try {
-    const { modelFileName, modelId, referenceImageUrl, referenceImageName, stylePrompt, subjectPrompt, seed, highQuality } = await request.json();
+    const { modelFileName, modelId, referenceImageUrl, referenceImageName, mainPrompt, selectedStyle, seed, highQuality, referenceStrength } = await request.json();
 
-    if (!modelFileName || !modelId || !stylePrompt || !subjectPrompt || !referenceImageName || !referenceImageUrl || seed === undefined) {
+    if (!modelFileName || !modelId || !mainPrompt || !referenceImageName || !referenceImageUrl || seed === undefined) {
       return NextResponse.json({ success: false, error: "Missing required parameters." }, { status: 400 });
     }
 
@@ -28,11 +28,12 @@ export async function POST(request: Request) {
       .insert({
         user_id: session.user.id,
         model_id: modelId,
-        style_prompt: stylePrompt,
-        subject_prompt: subjectPrompt,
+        style_prompt: selectedStyle,
+        subject_prompt: mainPrompt,
         reference_image_path: referenceImageUrl,
         seed: seed,
         status: 'processing',
+        high_quality: highQuality || false,
         // created_at will be set automatically by the database
       })
       .select('id')
@@ -49,18 +50,36 @@ export async function POST(request: Request) {
       modelId,
       modelFileName,
       referenceImageName,
+      mainPrompt,
+      selectedStyle,
       highQuality: highQuality || false
     });
 
     // 2. Prepare the workflow with our data and speed optimizations
     const apiWorkflow = getWorkflowCopy();
     
-    // Set the input parameters
+    // Set the input parameters with smart prompt enhancement
+    const styleTemplates = {
+      photorealistic: "ultra-realistic photography, high-resolution detail, accurate color rendering, sharp fabric texture, visible stitching, natural lighting, smooth gradients, balanced exposure, crisp edges, noise-free, true-to-life realism",
+      stylized: "artistic rendering, stylized textures, enhanced colors, creative interpretation, smooth surfaces",
+      vintage: "aged appearance, weathered textures, vintage color palette, worn surfaces, nostalgic feel",
+      industrial: "metallic surfaces, industrial materials, mechanical textures, hard edges, utilitarian design",
+      artistic: "painterly textures, artistic interpretation, creative colors, expressive surfaces"
+    };
+    
+    const enhancedStylePrompt = styleTemplates[selectedStyle as keyof typeof styleTemplates] || styleTemplates.photorealistic;
+    
     apiWorkflow["527"].inputs.mesh = modelFileName;
     apiWorkflow["381"].inputs.image = referenceImageName;
     apiWorkflow["180"].inputs.seed = seed;
-    apiWorkflow["605"].inputs.text = stylePrompt;
-    apiWorkflow["606"].inputs.text = subjectPrompt;
+    apiWorkflow["605"].inputs.text = enhancedStylePrompt;
+    apiWorkflow["606"].inputs.text = mainPrompt;
+    
+    // Set reference strength (IPAdapter weight) - default to 0.7 if not provided
+    const finalReferenceStrength = referenceStrength !== undefined ? referenceStrength : 0.7;
+    apiWorkflow["549"].inputs.weight = finalReferenceStrength;
+    
+    console.log(`Generation: Set reference strength to ${finalReferenceStrength} for generation ${generationId}`);
 
     // 3. Apply speed optimizations if fast mode is selected
     if (!highQuality) {

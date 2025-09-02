@@ -1,6 +1,6 @@
 import { createServer } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
-import BentoLayout from "@/components/layout/BentoLayout";
+import MainApp from "@/components/layout/MainApp";
 
 export default async function Home() {
   const supabase = createServer();
@@ -10,9 +10,5 @@ export default async function Home() {
     redirect('/login');
   }
 
-  return (
-    <main className="h-screen w-screen bg-gray-900 overflow-hidden">
-      <BentoLayout />
-    </main>
-  );
+  return <MainApp />;
 }

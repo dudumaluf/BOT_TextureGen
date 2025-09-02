@@ -15,7 +15,10 @@ import {
   Plus,
   LogOut,
   Sparkles,
-  X
+  X,
+  Timer,
+  Box,
+  Cube
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import UpgradeButton from "@/components/ui/upgrade-button";
@@ -29,17 +32,21 @@ export default function BottomControlBar() {
     modelFileName,
     referenceImageUrl,
     referenceImageName,
-    stylePrompt,
-    subjectPrompt,
+    mainPrompt,
+    selectedStyle,
+    referenceStrength,
     seed,
     isLoading,
     highQuality,
     currentGeneration,
     queueCount,
+    theme,
+    promptPanelHeight,
     setModelUrl, 
     setIsLoading,
-    setStylePrompt,
-    setSubjectPrompt,
+    setMainPrompt,
+    setSelectedStyle,
+    setReferenceStrength,
     setGeneratedTextures,
     setModelId,
     setReferenceImageUrl,
@@ -51,43 +58,21 @@ export default function BottomControlBar() {
     setCanUpgrade,
     addToQueue,
     toggleBottomBar,
+    setGenerations,
+    setPromptPanelHeight,
   } = useAppStore();
   
   const supabase = createClient();
   const router = useRouter();
   const [currentGenerationId, setCurrentGenerationId] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
-
-  // Auto-hide logic - hide bar when user isn't actively using it
-  useEffect(() => {
-    let hideTimer: NodeJS.Timeout;
-    
-    const resetHideTimer = () => {
-      clearTimeout(hideTimer);
-      setIsVisible(true);
-      hideTimer = setTimeout(() => {
-        if (!isLoading && !isExpanded) {
-          setIsVisible(false);
-        }
-      }, 3000); // Hide after 3 seconds of inactivity
-    };
-
-    // Show on mouse movement near bottom
-    const handleMouseMove = (e: MouseEvent) => {
-      if (e.clientY > window.innerHeight - 200) {
-        resetHideTimer();
-      }
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    resetHideTimer();
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      clearTimeout(hideTimer);
-    };
-  }, [isLoading, isExpanded]);
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeStartY, setResizeStartY] = useState(0);
+  const [resizeStartHeight, setResizeStartHeight] = useState(0);
+  
+  // Minimum height should match the stacked upload panels (2 * 64px + gap)
+  const minHeight = 140;
+  const maxHeight = 400;
 
   // Copy the polling logic from the old ControlPanel
   useEffect(() => {
@@ -121,16 +106,30 @@ export default function BottomControlBar() {
             setIsLoading(false);
             setCurrentGenerationId(null);
             
-            // Create generation pair for progressive enhancement
+            // Check if this was an upgrade generation
+            const wasUpgrade = generation.high_quality;
+            
+            // Create or update generation pair
             const generationPair = {
               id: generation.id,
-              fastGeneration: generation,
-              canUpgrade: !highQuality,
-              isUpgrading: false,
+              fastGeneration: wasUpgrade ? currentGeneration?.fastGeneration : generation,
+              hqGeneration: wasUpgrade ? generation : undefined,
+              canUpgrade: !wasUpgrade, // Can only upgrade if this was a fast generation
+              isUpgrading: false, // Always clear upgrading state
               currentTextures: textureData
             };
             
             setCurrentGeneration(generationPair);
+            
+            // Refresh gallery when generation completes
+            const { data: updatedGenerations } = await supabase
+              .from('generations')
+              .select('*, model:models(*)')
+              .order('created_at', { ascending: false });
+            
+            if (updatedGenerations) {
+              setGenerations(updatedGenerations);
+            }
             
             if (!highQuality) {
               toast.success("🎉 Fast textures ready! Click 'Upgrade' for maximum quality.");
@@ -265,6 +264,8 @@ export default function BottomControlBar() {
     }
     
     try {
+      console.log(`Generation: Sending reference strength: ${referenceStrength}`);
+      
       const startResponse = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -273,10 +274,11 @@ export default function BottomControlBar() {
           modelId,
           referenceImageUrl,
           referenceImageName,
-          stylePrompt,
-          subjectPrompt,
+          mainPrompt,
+          selectedStyle,
           seed,
           highQuality: actualQuality,
+          referenceStrength,
         }),
       });
 
@@ -301,149 +303,230 @@ export default function BottomControlBar() {
     }
   };
 
-  return (
-    <motion.div
-      initial={{ y: 100, opacity: 0 }}
-      animate={{ 
-        y: isVisible ? 0 : 80, 
-        opacity: isVisible ? 1 : 0.3 
-      }}
-      transition={{ type: "spring", damping: 25, stiffness: 200 }}
-      className="p-6"
-      onMouseEnter={() => setIsVisible(true)}
-    >
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl">
-        {/* Header with close button */}
-        <div className="flex items-center justify-between px-6 py-2 border-b border-gray-100">
-          <span className="text-sm font-medium text-gray-700">Generation Controls</span>
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={toggleBottomBar}
-            className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-          >
-            <X className="h-4 w-4 text-gray-500" />
-          </motion.button>
-        </div>
-        
-        {/* Main Control Bar */}
-        <div className="flex items-center gap-4 px-6 py-3">
-          {/* Left: Upload Squares */}
-          <div className="flex items-center gap-3">
-            {/* Model Upload Square */}
-            <div className="relative">
-              <input
-                id="model-upload"
-                type="file"
-                accept=".glb"
-                onChange={handleFileChange}
-                disabled={isLoading}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className={`w-12 h-12 rounded-xl border-2 border-dashed transition-all flex items-center justify-center ${
-                  modelUrl 
-                    ? 'border-green-400 bg-green-50 text-green-600' 
-                    : 'border-gray-300 bg-gray-50 text-gray-500 hover:border-blue-300 hover:bg-blue-50'
-                }`}
-                title="Upload 3D Model (.glb)"
-              >
-                {modelUrl ? (
-                  <div className="text-xs font-bold">3D</div>
-                ) : (
-                  <Upload className="h-5 w-5" />
-                )}
-              </motion.div>
-            </div>
+  // Resize handlers
+  const handleResizeStart = (e: React.MouseEvent) => {
+    setIsResizing(true);
+    setResizeStartY(e.clientY);
+    setResizeStartHeight(promptPanelHeight);
+    e.preventDefault();
+  };
 
-            {/* Reference Upload Square */}
-            <div className="relative">
+  const handleResizeMove = (e: MouseEvent) => {
+    if (!isResizing) return;
+    
+    const deltaY = resizeStartY - e.clientY; // Inverted: drag up = increase height
+    const newHeight = Math.max(minHeight, Math.min(maxHeight, resizeStartHeight + deltaY));
+    setPromptPanelHeight(newHeight);
+  };
+
+  const handleResizeEnd = () => {
+    setIsResizing(false);
+  };
+
+  // Global mouse events for resizing
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleResizeMove);
+      document.addEventListener('mouseup', handleResizeEnd);
+      document.body.style.cursor = 'ns-resize';
+      document.body.style.userSelect = 'none';
+      
+      return () => {
+        document.removeEventListener('mousemove', handleResizeMove);
+        document.removeEventListener('mouseup', handleResizeEnd);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      };
+    }
+  }, [isResizing, resizeStartY, resizeStartHeight]);
+
+  return (
+    <div className="flex items-center gap-4 w-full min-w-[600px] max-w-4xl mx-auto px-6">
+      {/* Left: Stacked Asset Upload Panels */}
+      <div className="flex flex-col gap-3">
+        {/* Model Upload Panel */}
+        <motion.div
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className={`relative rounded-2xl border shadow-lg ${
+            theme === 'dark' 
+              ? 'bg-gray-800/95 border-gray-700' 
+              : 'bg-white/95 border-gray-200'
+          }`}
+        >
+          <input
+            id="model-upload"
+            type="file"
+            accept=".glb"
+            onChange={handleFileChange}
+            disabled={false}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+          />
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="w-16 h-16 flex items-center justify-center"
+          >
+            {modelUrl ? (
+              <div className="text-emerald-600 font-bold text-sm">3D</div>
+            ) : (
+              <Box className={`h-6 w-6 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
+            )}
+          </motion.div>
+        </motion.div>
+
+        {/* Reference Upload Panel */}
+        <motion.div
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.3, ease: "easeOut", delay: 0.1 }}
+          className={`relative rounded-2xl border shadow-lg ${
+            theme === 'dark' 
+              ? 'bg-gray-800/95 border-gray-700' 
+              : 'bg-white/95 border-gray-200'
+          }`}
+        >
+          {referenceImageUrl ? (
+            <div className="p-2">
+              <ReferenceThumbnail />
+            </div>
+          ) : (
+            <>
               <input
                 id="reference-upload"
                 type="file"
                 accept="image/*"
                 onChange={handleReferenceImageChange}
-                disabled={isLoading}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                disabled={false}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
               />
               <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className={`w-12 h-12 rounded-xl border-2 border-dashed transition-all flex items-center justify-center overflow-hidden ${
-                  referenceImageUrl 
-                    ? 'border-green-400 bg-green-50' 
-                    : 'border-gray-300 bg-gray-50 text-gray-500 hover:border-blue-300 hover:bg-blue-50'
-                }`}
-                title="Upload Reference Image"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-16 h-16 flex items-center justify-center"
               >
-                {referenceImageUrl ? (
-                  <img src={referenceImageUrl} alt="Reference" className="w-full h-full object-cover" />
-                ) : (
-                  <ImageIcon className="h-5 w-5" />
-                )}
+                <ImageIcon className={`h-6 w-6 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
               </motion.div>
-            </div>
+            </>
+          )}
+        </motion.div>
+      </div>
+
+      {/* Main Prompt Panel */}
+      <motion.div
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3, ease: "easeOut", delay: 0.2 }}
+        className="flex-1 relative"
+      >
+        {/* Close button */}
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={toggleBottomBar}
+          className={`absolute -top-2 -right-2 z-10 p-1.5 rounded-full transition-all duration-150 ease-out shadow-lg border ${
+            theme === 'dark' 
+              ? 'bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-300 border-gray-700' 
+              : 'bg-white hover:bg-gray-50 text-gray-500 hover:text-gray-700 border-gray-200'
+          }`}
+        >
+          <X className="h-4 w-4" />
+        </motion.button>
+
+        <div 
+          className={`rounded-2xl border shadow-lg overflow-hidden group ${
+            theme === 'dark' 
+              ? 'bg-gray-900/95 border-gray-700' 
+              : 'bg-white/95 border-gray-200'
+          }`}
+          style={{ height: `${promptPanelHeight}px` }}
+        >
+          {/* Resize Handle - Only visible on hover */}
+          <div
+            className="w-full h-2 cursor-ns-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            onMouseDown={handleResizeStart}
+          >
+            <div className={`w-8 h-1 rounded-full ${
+              theme === 'dark' ? 'bg-gray-500' : 'bg-gray-400'
+            }`} />
           </div>
 
-          {/* Center: Prompt Input */}
-          <div className="flex-1">
-            <Input
-              placeholder="Describe your desired texture style and subject..."
-              value={`${stylePrompt}, ${subjectPrompt}`}
-              onChange={(e) => {
-                const fullPrompt = e.target.value;
-                const parts = fullPrompt.split(',');
-                setStylePrompt(parts[0]?.trim() || '');
-                setSubjectPrompt(parts.slice(1).join(',').trim() || '');
-              }}
-              disabled={isLoading}
-              className="text-sm bg-white/80 border-white/40 focus:bg-white/95 transition-all"
+          {/* Prompt Input */}
+          <div className="p-6 flex-1 flex flex-col" style={{ height: `${promptPanelHeight - 80}px` }}>
+            <textarea
+              placeholder="Describe any object to generate from scratch..."
+              value={mainPrompt}
+              onChange={(e) => setMainPrompt(e.target.value)}
+              disabled={false}
+              className={`w-full text-base leading-relaxed border-0 bg-transparent resize-none flex-1 overflow-y-auto focus:outline-none placeholder:text-opacity-60 ${
+                theme === 'dark'
+                  ? 'text-white placeholder:text-gray-500'
+                  : 'text-gray-900 placeholder:text-gray-500'
+              }`}
             />
           </div>
 
-          {/* Right: Controls */}
-          <div className="flex items-center gap-3">
-            {/* Seed */}
-            <div className="flex items-center gap-2">
+          {/* Bottom Controls */}
+          <div className={`flex items-center justify-between px-6 py-4 border-t ${
+            theme === 'dark' ? 'border-gray-800' : 'border-gray-100'
+          }`}>
+            {/* Left: Style and Seed */}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => {
+                  const styles = ['photorealistic', 'stylized', 'vintage', 'industrial', 'artistic'];
+                  const currentIndex = styles.indexOf(selectedStyle);
+                  const nextIndex = (currentIndex + 1) % styles.length;
+                  setSelectedStyle(styles[nextIndex]);
+                }}
+                disabled={false}
+                className={`w-32 text-left text-sm font-medium cursor-pointer transition-all duration-200 ease-out capitalize ${
+                  theme === 'dark'
+                    ? 'text-gray-300 hover:text-white'
+                    : 'text-gray-700 hover:text-gray-900'
+                }`}
+                title="Click to cycle through styles"
+              >
+                {selectedStyle.toUpperCase()}
+              </button>
+
               <Input 
                 type="number" 
                 value={seed} 
                 onChange={(e) => setSeed(parseInt(e.target.value, 10))}
-                disabled={isLoading}
-                className="w-20 text-sm"
-                title="Seed"
+                disabled={false}
+                className={`w-20 text-sm text-center border-0 bg-transparent focus:outline-none ${
+                  theme === 'dark'
+                    ? 'text-gray-300'
+                    : 'text-gray-700'
+                }`}
+                placeholder="Seed"
               />
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setSeed(Math.floor(Math.random() * 1000000))}
-                disabled={isLoading}
-                className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
-                title="Random Seed"
-              >
-                <Dices className="h-4 w-4" />
-              </motion.button>
             </div>
 
-            {/* Smart Generate/Queue Button */}
-            <div className="flex items-center gap-2">
-              <Button 
-                onClick={handleGenerate} 
-                disabled={isLoading || !modelUrl || !referenceImageUrl}
-                className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50"
+            {/* Right: Minimalist Actions */}
+            <div className="flex items-center gap-4">
+              {/* Quality Toggle */}
+              <button
+                onClick={() => setHighQuality(!highQuality)}
+                disabled={false}
+                className={`text-sm font-medium cursor-pointer transition-all duration-200 ease-out ${
+                  theme === 'dark'
+                    ? 'text-gray-300 hover:text-white'
+                    : 'text-gray-700 hover:text-gray-900'
+                }`}
+                title={highQuality ? 'High Quality (12-15 min)' : 'Low Quality/Fast (2-3 min)'}
               >
-                {isLoading ? 'Processing...' : queueCount > 0 ? 'Add to Queue' : 'Generate'}
-              </Button>
-              
-              {/* Queue to Process Later Button */}
-              {modelUrl && referenceImageUrl && !isLoading && (
+                {highQuality ? 'HIGH QUALITY' : 'LOW QUALITY'}
+              </button>
+
+              {/* Queue Button - Always available when assets are loaded */}
+              {modelUrl && referenceImageUrl && (
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => {
-                    // Add current settings to queue for later processing
                     const queueItem = {
                       id: Date.now().toString(),
                       type: 'generation',
@@ -451,41 +534,88 @@ export default function BottomControlBar() {
                       modelId,
                       referenceImageUrl,
                       referenceImageName,
-                      stylePrompt,
-                      subjectPrompt,
+                      mainPrompt,
+                      selectedStyle,
                       seed,
-                      highQuality: false, // Always start with fast
+                      referenceStrength,
+                      highQuality: false,
                       status: 'queued'
                     };
                     addToQueue(queueItem);
                     toast.success("Added to generation queue");
                   }}
-                  className="p-2 rounded-lg border border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-600 transition-all"
+                  className={`p-2 rounded-lg transition-all duration-200 ease-out ${
+                    theme === 'dark'
+                      ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-300'
+                      : 'hover:bg-gray-100 text-gray-600 hover:text-gray-700'
+                  }`}
                   title="Queue for Later"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Timer className="h-4 w-4" />
+                </motion.button>
+              )}
+
+              {/* Generate/Stop Button */}
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  {/* Processing Indicator */}
+                  <motion.div
+                    className={`p-3 rounded-xl ${
+                      theme === 'dark' ? 'bg-gray-700' : 'bg-gray-300'
+                    }`}
+                  >
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="w-5 h-5 border-2 border-current border-t-transparent rounded-full"
+                    />
+                  </motion.div>
+                  
+                  {/* Stop Processing Button */}
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      setIsLoading(false);
+                      setCurrentGenerationId(null);
+                      toast.info("Processing stopped - you can start a new generation");
+                    }}
+                    className={`px-4 py-2 rounded-lg border transition-all duration-200 ease-out ${
+                      theme === 'dark'
+                        ? 'bg-red-600 hover:bg-red-700 text-white border-red-500'
+                        : 'bg-red-500 hover:bg-red-600 text-white border-red-400'
+                    }`}
+                    title="Stop current processing and reset"
+                  >
+                    Stop
+                  </motion.button>
+                </div>
+              ) : (
+                /* Generate Button - Icon Only */
+                <motion.button
+                  whileHover={{ scale: 1.05, y: -1 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleGenerate}
+                  disabled={!modelUrl || !referenceImageUrl}
+                  className={`
+                    relative p-3 rounded-xl transition-all duration-200
+                    ${!modelUrl || !referenceImageUrl
+                      ? theme === 'dark' 
+                        ? 'bg-gray-700 cursor-not-allowed text-gray-500' 
+                        : 'bg-gray-300 cursor-not-allowed text-gray-500'
+                      : 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl'
+                    }
+                  `}
+                  title="Generate Textures"
+                >
+                  <Sparkles className="h-5 w-5" />
                 </motion.button>
               )}
             </div>
-
-            {/* Sign Out */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleSignOut}
-              className="p-2 rounded-lg bg-gray-100 hover:bg-red-100 text-gray-600 hover:text-red-600 transition-all"
-              title="Sign Out"
-            >
-              <LogOut className="h-4 w-4" />
-            </motion.button>
           </div>
         </div>
 
-        {/* Upgrade Button (appears after fast generation) */}
-        <div className="px-6 pb-4">
-          <UpgradeButton />
-        </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }

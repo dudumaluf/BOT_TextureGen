@@ -13,7 +13,7 @@ interface AssetPreviewProps {
 }
 
 export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewProps) {
-  const { referenceImageUrl, generatedTextures } = useAppStore();
+  const { referenceImageUrl, generatedTextures, theme } = useAppStore();
 
   const handleDownload = async (url: string, filename: string) => {
     try {
@@ -40,22 +40,27 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
   }
 
   return (
-    <div className="bg-white/95 backdrop-blur-md rounded-xl border border-white/20 shadow-lg">
+    <div className={`backdrop-blur-md rounded-xl border shadow-lg ${
+      theme === 'dark' 
+        ? 'bg-gray-900/95 border-gray-700' 
+        : 'bg-white/95 border-white/20'
+    }`}>
       <div className="p-3">
-        {/* Header with close button */}
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-medium text-gray-600">Textures</span>
-          {onClose && (
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={onClose}
-              className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-            >
-              <X className="h-3 w-3 text-gray-400" />
-            </motion.button>
-          )}
-        </div>
+        {/* Close button */}
+        {onClose && (
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={onClose}
+            className={`absolute -top-1 -right-1 p-1 rounded-full transition-colors z-10 shadow-sm border ${
+              theme === 'dark'
+                ? 'bg-gray-800 hover:bg-gray-700 border-gray-700 text-gray-400'
+                : 'bg-white/90 hover:bg-gray-100 border-gray-200 text-gray-400'
+            }`}
+          >
+            <X className="h-3 w-3" />
+          </motion.button>
+        )}
         <div className="flex items-center gap-3">
             {referenceImageUrl && (
               <motion.div
