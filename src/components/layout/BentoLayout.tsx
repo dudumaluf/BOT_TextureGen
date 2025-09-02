@@ -123,7 +123,7 @@ export default function BentoLayout() {
           className="absolute top-1 left-1 pointer-events-auto z-40"
         >
           <Image
-            src={theme === 'dark' ? '/logo_texturegen_white_on_transparent_.png' : '/logo_texturegen_black_on_transparent.png'}
+            src={theme === 'light' ? '/logo_texturegen_black_on_transparent.png' : '/logo_texturegen_white_on_transparent_.png'}
             alt="TextureGen"
             width={115}
             height={115}

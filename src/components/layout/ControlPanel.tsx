@@ -19,8 +19,8 @@ export default function ControlPanel() {
     modelFileName,
     referenceImageUrl,
     referenceImageName,
-    stylePrompt,
-    subjectPrompt,
+    mainPrompt,
+    selectedStyle,
     seed,
     isLoading,
     highQuality,
@@ -28,8 +28,8 @@ export default function ControlPanel() {
     queueCount,
     setModelUrl, 
     setIsLoading,
-    setStylePrompt,
-    setSubjectPrompt,
+    setMainPrompt,
+    setSelectedStyle,
     setGeneratedTextures,
     setModelId,
     setReferenceImageUrl,
@@ -238,8 +238,8 @@ export default function ControlPanel() {
           modelId,
           referenceImageUrl,
           referenceImageName,
-          stylePrompt,
-          subjectPrompt,
+          mainPrompt,
+          selectedStyle,
           seed,
           highQuality: actualQuality,
         }),
@@ -292,8 +292,8 @@ export default function ControlPanel() {
           className="w-full rounded-md border border-gray-300 p-2 text-sm"
           placeholder="e.g., ultra-realistic photography, high-resolution detail..."
           rows={3}
-          value={stylePrompt}
-          onChange={(e) => setStylePrompt(e.target.value)}
+          value={selectedStyle}
+          onChange={(e) => setSelectedStyle(e.target.value)}
           disabled={isLoading}
         />
       </div>
@@ -307,8 +307,8 @@ export default function ControlPanel() {
           className="w-full rounded-md border border-gray-300 p-2 text-sm"
           placeholder="e.g., brown bomber jacket, displayed front-facing..."
           rows={3}
-          value={subjectPrompt}
-          onChange={(e) => setSubjectPrompt(e.target.value)}
+          value={mainPrompt}
+          onChange={(e) => setMainPrompt(e.target.value)}
           disabled={isLoading}
         />
       </div>

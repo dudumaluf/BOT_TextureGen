@@ -21,7 +21,7 @@ export default function SettingsModal() {
   const [activeTab, setActiveTab] = useState<'styles' | 'appearance' | 'advanced'>('styles');
   
   // Editable style templates state
-  const [styleTemplates, setStyleTemplates] = useState({
+  const [styleTemplates, setStyleTemplates] = useState<Record<string, string>>({
     photorealistic: "ultra-realistic photography, high-resolution detail, accurate color rendering, sharp fabric texture, visible stitching, natural lighting, smooth gradients, balanced exposure, crisp edges, noise-free, true-to-life realism",
     stylized: "artistic rendering, stylized textures, enhanced colors, creative interpretation, smooth surfaces",
     vintage: "aged appearance, weathered textures, vintage color palette, worn surfaces, nostalgic feel",
