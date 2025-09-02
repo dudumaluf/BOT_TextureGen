@@ -282,10 +282,10 @@ export const useAppStore = create<AppState>((set) => ({
       selectedStyle: generation.style_prompt || "photorealistic",
       seed: generation.seed,
       generatedTextures: {
-        diffuse: generation.diffuse_storage_path,
-        normal: generation.normal_storage_path,
-        height: generation.height_storage_path,
-        thumbnail: generation.thumbnail_storage_path,
+        diffuse: generation.diffuse_storage_path || null,
+        normal: generation.normal_storage_path || null,
+        height: generation.height_storage_path || null,
+        thumbnail: generation.thumbnail_storage_path || null,
       }
     });
   },
