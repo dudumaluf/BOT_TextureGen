@@ -131,7 +131,8 @@ class WebhookNode:
                 # Convert tensor to image URL
                 image_url = self.tensor_to_image_url(tensor, key, generationId)
                 if image_url:
-                    base_url = os.getenv('COMFYUI_BASE_URL', 'http://localhost:8188')
+                    # Use tunnel URL if available, fallback to localhost
+                    base_url = os.getenv('COMFYUI_BASE_URL', 'https://employ-predictions-wednesday-trust.trycloudflare.com')
                     textures[key] = f"{base_url}{image_url}"
                     print(f"AUTOMATA: Saved {key} texture: {textures[key]}")
 

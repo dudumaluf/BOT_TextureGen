@@ -5,8 +5,8 @@ import { Toaster } from 'sonner';
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TextureGen",
-  description: "Generate textures for your 3D models using AI.",
+  title: "TextureGen - AI-Powered 3D Texture Generation",
+  description: "Revolutionary AI-powered texture generation for 3D models. Upload your model, describe your vision, and watch as AI creates professional-grade PBR textures in real-time.",
 };
 
 export default function RootLayout({

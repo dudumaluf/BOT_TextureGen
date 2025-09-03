@@ -1,22 +1,30 @@
-# AUTOMATA: AI-Powered 3D Texture Generation
+# TextureGen: AI-Powered 3D Texture Generation
 
-AUTOMATA is an innovative web application that revolutionizes the 3D texturing workflow by allowing artists and developers to generate high-quality, AI-powered PBR (Physically Based Rendering) textures directly in the browser. Simply upload your 3D model, provide a reference image and text prompts, and watch as AI creates professional-grade textures in real-time.
+TextureGen is an innovative web application that revolutionizes the 3D texturing workflow by allowing artists and developers to generate high-quality, AI-powered PBR (Physically Based Rendering) textures directly in the browser. Simply upload your 3D model, provide a reference image and text prompts, and watch as AI creates professional-grade textures in real-time.
 
-![AUTOMATA Demo](public/demo-screenshot.png)
+![TextureGen Demo](public/demo-screenshot.png)
 
 ## ✨ Features
 
+### **Core AI Generation**
 - **🎨 AI Texture Generation**: Generate diffuse, normal, and height maps using advanced AI models
 - **🖼️ Interactive 3D Viewer**: Real-time preview with React Three Fiber
-- **📱 Modern UI**: Beautiful sidebar layout with smooth animations powered by Framer Motion
+- **⚡ Progressive Enhancement**: Fast preview mode with optional high-quality upgrades
+- **🔄 Real-time Updates**: Webhook-based system for instant texture delivery
+
+### **Professional UI/UX**
+- **📱 Modern Bento Layout**: Beautiful sidebar layout with smooth animations powered by Framer Motion
 - **🎬 Intro Animations**: Professional company logo and app branding animations
 - **🌓 Dark/Light Theme**: Complete theme system with proper color consistency
-- **🔐 Secure Authentication**: User management with Supabase Auth
 - **📚 Generation Gallery**: View and manage your texture generation history with advanced controls
 - **⚙️ Advanced Settings**: Customizable style templates and generation parameters
-- **☁️ Cloud Storage**: Automatic upload to Supabase Storage for production deployment
-- **🔄 Real-time Updates**: Webhook-based system for instant texture delivery
-- **⚡ Progressive Enhancement**: Fast preview mode with optional high-quality upgrades
+
+### **Enterprise Architecture**
+- **🔐 Secure Authentication**: User management with Supabase Auth
+- **☁️ Hybrid Storage**: Automatic upload to Supabase Storage with ComfyUI fallbacks
+- **🌐 Multi-Environment Support**: Seamless local development and production deployment
+- **🏢 Corporate Network Ready**: Multiple deployment strategies for enterprise environments
+- **🔧 Flexible ComfyUI Integration**: Local, cloud, or tunneled ComfyUI connections
 
 ## 🏗️ Architecture
 
@@ -62,8 +70,8 @@ graph TD
 ### 1. Clone and Install
 
 ```bash
-git clone https://github.com/your-username/automata.git
-cd automata
+git clone https://github.com/dudumaluf/BOT_TextureGen.git
+cd BOT_TextureGen
 npm install
 ```
 
@@ -157,39 +165,80 @@ The workflow automatically:
 5. Creates normal and height maps
 6. Delivers results via webhook
 
-## 🌐 Deployment
+## 🌐 Deployment Options
 
-### Vercel Deployment
+AUTOMATA supports multiple deployment architectures to fit different environments and requirements:
 
-1. **Push to GitHub:**
-   ```bash
-   git add .
-   git commit -m "Initial commit"
-   git push origin main
-   ```
-
-2. **Deploy to Vercel:**
-   - Connect your GitHub repository
-   - Add environment variables in Vercel dashboard
-   - Deploy automatically
-
-### Environment Variables for Production
-
+### **🏠 Local Development**
+Perfect for development and testing:
 ```bash
-# Supabase (same as development)
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+# Local ComfyUI
+COMFYUI_API_URL=http://localhost:8188
+NEXT_PUBLIC_COMFYUI_API_URL=http://localhost:8188
 
-# ComfyUI (update to your production ComfyUI instance)
+# Local development
+NEXTAUTH_URL=http://localhost:3000
+```
+
+### **☁️ Full Cloud Deployment**
+For production with cloud ComfyUI:
+```bash
+# Cloud ComfyUI instance
 COMFYUI_API_URL=https://your-comfyui-server.com
 NEXT_PUBLIC_COMFYUI_API_URL=https://your-comfyui-server.com
 
-# Webhook Security (required for production)
-COMFYUI_WEBHOOK_SECRET=your_production_webhook_secret
-
-# Application URL
+# Production URL
 NEXTAUTH_URL=https://your-app.vercel.app
 ```
+
+### **🌉 Hybrid: Local ComfyUI + Cloud App**
+For corporate environments with local AI processing:
+```bash
+# Tunneled local ComfyUI (via Cloudflare Tunnel)
+COMFYUI_API_URL=https://your-tunnel.trycloudflare.com
+NEXT_PUBLIC_COMFYUI_API_URL=https://your-tunnel.trycloudflare.com
+
+# Cloud app
+NEXTAUTH_URL=https://your-app.vercel.app
+```
+
+### **🏢 Corporate Network Solutions**
+
+#### **Option 1: Cloudflare Tunnel (Recommended)**
+```bash
+# Install Cloudflare Tunnel
+npm install -g cloudflared
+
+# Create secure tunnel to local ComfyUI
+cloudflared tunnel --url localhost:8188
+
+# Use generated HTTPS URL in Vercel environment variables
+```
+
+#### **Option 2: ngrok Professional**
+```bash
+# Professional ngrok with static subdomain
+ngrok http 8188 --subdomain=your-company-comfyui
+
+# Use static URL: https://your-company-comfyui.ngrok.io
+```
+
+#### **Option 3: VPN + Port Forwarding**
+Work with IT to configure secure port forwarding through corporate VPN.
+
+### **📋 IT Collaboration Checklist**
+
+**Present to IT Department:**
+- [ ] **Business justification**: AI texture generation for 3D development
+- [ ] **Security requirements**: Internal AI processing, no external data sharing  
+- [ ] **Technical specs**: HTTPS tunnel to port 8188, webhook callbacks
+- [ ] **Compliance**: All sensitive data remains on internal networks
+- [ ] **Monitoring**: Full audit trail and access controls
+
+**Approved Solutions Ranking:**
+1. 🥇 **Cloudflare Tunnel** - Zero firewall changes, enterprise security
+2. 🥈 **Corporate VPN** - IT-controlled, secure internal routing  
+3. 🥉 **ngrok Professional** - Static domains, better monitoring
 
 ## 🔐 Security Features
 
@@ -234,7 +283,7 @@ Modern interface built for production use:
 ## 📁 Project Structure
 
 ```
-automata/
+texturegen/
 ├── src/
 │   ├── app/                    # Next.js App Router
 │   │   ├── api/               # API routes
@@ -301,7 +350,7 @@ The ComfyUI workflow can be modified to:
 
 Enable detailed logging by checking browser console and server logs:
 - **ComfyUI Console**: Shows WebhookNode processing
-- **AUTOMATA Console**: Shows webhook reception and processing
+- **TextureGen Console**: Shows webhook reception and processing
 - **Browser Console**: Shows texture loading and 3D rendering
 
 ## 📈 Performance Optimization
@@ -336,3 +385,16 @@ MIT License - see LICENSE file for details.
 **Built with ❤️ for the 3D art and game development community**
 
 *Transform your 3D models with the power of AI - no complex software required.*
+
+## 🌟 Live Demo
+
+**Experience TextureGen in action:**
+- **Live Application**: [https://bot-texturegen.vercel.app](https://bot-texturegen.vercel.app)
+- **GitHub Repository**: [https://github.com/dudumaluf/BOT_TextureGen](https://github.com/dudumaluf/BOT_TextureGen)
+
+**Deployment Status:** ✅ **Production Ready**
+- 🎨 Full AI texture generation pipeline
+- 🌓 Complete dark/light theme system
+- 🎬 Professional intro animations
+- 🏢 Corporate network compatible (Cloudflare Tunnel integration)
+- ⚡ Progressive enhancement with fast preview + high quality modes
