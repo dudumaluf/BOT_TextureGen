@@ -54,10 +54,15 @@ export function getEnvironmentInfo() {
 export async function checkComfyUIHealth(): Promise<boolean> {
   try {
     const config = getComfyUIConfig();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
     const response = await fetch(`${config.apiUrl}/system_stats`, {
       method: 'GET',
-      timeout: 5000
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
     return response.ok;
   } catch (error) {
     console.warn('ComfyUI health check failed:', error);
