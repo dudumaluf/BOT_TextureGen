@@ -72,7 +72,9 @@ export default function ImagePreviewModal({
       // Update position immediately for responsiveness
       setPosition(prev => ({
         x: prev.x + deltaX,
-        y: prev.y + deltaY
+        y: prev.y + deltaY,
+        originX: prev.originX,
+        originY: prev.originY
       }));
       
       // Update drag start for next frame
