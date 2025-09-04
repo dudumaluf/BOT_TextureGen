@@ -79,8 +79,8 @@ export default function BottomControlBar() {
   const [resizeStartY, setResizeStartY] = useState(0);
   const [resizeStartHeight, setResizeStartHeight] = useState(0);
   
-  // Minimum height should match the stacked upload panels (2 * 48px + gap on mobile)
-  const minHeight = 120;
+  // Responsive minimum height - smaller on mobile, proper size on desktop
+  const minHeight = 140; // Keep desktop minimum at 140px
   const maxHeight = 400;
 
   // Copy the polling logic from the old ControlPanel
@@ -688,7 +688,7 @@ export default function BottomControlBar() {
               ? 'bg-gray-900/95 border-gray-700' 
               : 'bg-white/95 border-gray-200'
           }`}
-          style={{ height: `${Math.max(promptPanelHeight, 120)}px` }} // Reduced minimum height for mobile
+          style={{ height: `${Math.max(promptPanelHeight, minHeight)}px` }} // Responsive minimum height
         >
           {/* Resize Handle - Only visible on hover */}
           <div
@@ -701,7 +701,7 @@ export default function BottomControlBar() {
           </div>
 
           {/* Prompt Input */}
-          <div className="p-2 sm:p-6 flex-1 flex flex-col" style={{ height: `${Math.max(promptPanelHeight, 120) - 60}px` }}>
+          <div className="p-2 sm:p-6 flex-1 flex flex-col" style={{ height: `${Math.max(promptPanelHeight, minHeight) - 80}px` }}>
             <textarea
               placeholder="Describe any object to generate from scratch..."
               value={mainPrompt}
@@ -716,7 +716,7 @@ export default function BottomControlBar() {
           </div>
 
           {/* Bottom Controls */}
-          <div className={`flex items-center justify-between px-2 sm:px-6 py-1 sm:py-4 border-t ${
+          <div className={`flex items-center justify-between px-2 sm:px-6 py-2 sm:py-4 border-t ${
             theme === 'dark' ? 'border-gray-800' : 'border-gray-100'
           }`}>
             {/* Left: Style and Seed */}
