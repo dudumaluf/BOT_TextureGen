@@ -1,6 +1,7 @@
 "use client";
 
-import { useAppStore, type ModelPreset } from "@/store/appStore";
+import { useAppStore } from "@/store/appStore";
+import { type ModelPreset } from "@/lib/model-presets";
 import { getActiveModelPreset, createCustomPreset, samplerOptions, schedulerOptions } from "@/lib/model-presets";
 import ModelPresetEditor from "./ModelPresetEditor";
 import { motion, AnimatePresence } from "framer-motion";

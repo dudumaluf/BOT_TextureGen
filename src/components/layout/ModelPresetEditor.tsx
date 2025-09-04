@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Save, X, Copy, Edit, Trash2, Zap, Target } from "lucide-react";
-import { useAppStore, type ModelPreset } from "@/store/appStore";
+import { useAppStore } from "@/store/appStore";
+import { type ModelPreset } from "@/lib/model-presets";
 import { samplerOptions, schedulerOptions, createCustomPreset, availableModels } from "@/lib/model-presets";
 import { toast } from "sonner";
 
