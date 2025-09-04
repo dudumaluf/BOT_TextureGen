@@ -59,7 +59,7 @@ export default function BentoLayout() {
   };
 
   return (
-    <div className={`h-screen w-screen relative overflow-hidden ${theme === 'dark' ? 'dark bg-gray-900' : 'bg-gray-100'}`}>
+    <div className={`h-screen w-screen relative overflow-hidden mobile-container ${theme === 'dark' ? 'dark bg-gray-900' : 'bg-gray-100'}`}>
       {/* Full-Screen 3D Viewer - Never Resizes */}
       <div className="absolute inset-0">
         <Viewer />

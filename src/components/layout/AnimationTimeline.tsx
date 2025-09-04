@@ -227,7 +227,7 @@ export default function AnimationTimeline({ isQueueOpen = false, isSceneOpen = f
         }}
       >
         {/* Match BottomControlBar's container structure */}
-        <div className="flex items-center gap-4 w-full min-w-[600px] max-w-4xl mx-auto px-6">
+        <div className="flex items-center gap-2 sm:gap-4 w-full min-w-0 max-w-4xl mx-auto px-3 sm:px-6">
           {/* Spacer for upload panels: 64px width + 16px gap = 80px */}
           <div className="w-20 flex-shrink-0"></div>
           

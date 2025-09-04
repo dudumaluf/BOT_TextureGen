@@ -7,6 +7,18 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "TextureGen - AI-Powered 3D Texture Generation",
   description: "Revolutionary AI-powered texture generation for 3D models. Upload your model, describe your vision, and watch as AI creates professional-grade PBR textures in real-time.",
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    viewportFit: 'cover',
+  },
+  themeColor: '#111827',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+  },
 };
 
 export default function RootLayout({

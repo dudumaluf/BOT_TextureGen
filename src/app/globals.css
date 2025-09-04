@@ -2,6 +2,53 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile viewport fixes */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
+  /* Support for mobile safe areas (notches, etc.) */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* Prevent horizontal scrolling on mobile */
+* {
+  box-sizing: border-box;
+}
+
+/* Mobile-specific container fixes */
+@media (max-width: 640px) {
+  .mobile-container {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+}
+
+/* Touch optimization for mobile */
+@media (hover: none) and (pointer: coarse) {
+  /* Increase touch target sizes on mobile */
+  button, [role="button"], input[type="file"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Remove hover effects on touch devices */
+  .hover-only {
+    display: none;
+  }
+  
+  /* Optimize touch interactions */
+  * {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  
+  /* Prevent zoom on input focus */
+  input, textarea, select {
+    font-size: 16px;
+  }
+}
+
 /* Dark mode scrollbars - Minimalistic dark theme */
 .dark {
   scrollbar-width: thin;
