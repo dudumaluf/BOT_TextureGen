@@ -56,12 +56,12 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
   }
 
   return (
-    <div className={`backdrop-blur-md rounded-xl border shadow-lg ${
+    <div className={`backdrop-blur-md rounded-xl border shadow-lg max-w-full overflow-x-auto ${
       theme === 'dark' 
         ? 'bg-gray-900/95 border-gray-700' 
         : 'bg-white/95 border-white/20'
     }`}>
-      <div className="p-3">
+      <div className="p-2 sm:p-3">
         {/* Close button */}
         {onClose && (
           <motion.button
@@ -77,7 +77,7 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
             <X className="h-3 w-3" />
           </motion.button>
         )}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
             {referenceImageUrl && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
@@ -87,7 +87,7 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
               >
                 <div className="text-center">
                   <p className="text-xs font-medium mb-1 text-gray-600">Ref</p>
-                  <div className="relative w-[60px] h-[60px] overflow-hidden rounded">
+                  <div className="relative w-[50px] h-[50px] sm:w-[60px] sm:h-[60px] overflow-hidden rounded">
                     <Image 
                       src={referenceImageUrl} 
                       alt="Reference" 

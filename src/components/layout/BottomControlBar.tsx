@@ -79,8 +79,8 @@ export default function BottomControlBar() {
   const [resizeStartY, setResizeStartY] = useState(0);
   const [resizeStartHeight, setResizeStartHeight] = useState(0);
   
-  // Minimum height should match the stacked upload panels (2 * 64px + gap)
-  const minHeight = 140;
+  // Minimum height should match the stacked upload panels (2 * 48px + gap on mobile)
+  const minHeight = 120;
   const maxHeight = 400;
 
   // Copy the polling logic from the old ControlPanel
@@ -688,7 +688,7 @@ export default function BottomControlBar() {
               ? 'bg-gray-900/95 border-gray-700' 
               : 'bg-white/95 border-gray-200'
           }`}
-          style={{ height: `${Math.max(promptPanelHeight, 140)}px` }} // Ensure minimum height on mobile
+          style={{ height: `${Math.max(promptPanelHeight, 120)}px` }} // Reduced minimum height for mobile
         >
           {/* Resize Handle - Only visible on hover */}
           <div
@@ -701,13 +701,13 @@ export default function BottomControlBar() {
           </div>
 
           {/* Prompt Input */}
-          <div className="p-3 sm:p-6 flex-1 flex flex-col" style={{ height: `${Math.max(promptPanelHeight, 140) - 80}px` }}>
+          <div className="p-2 sm:p-6 flex-1 flex flex-col" style={{ height: `${Math.max(promptPanelHeight, 120) - 60}px` }}>
             <textarea
               placeholder="Describe any object to generate from scratch..."
               value={mainPrompt}
               onChange={(e) => setMainPrompt(e.target.value)}
               disabled={false}
-              className={`w-full text-base leading-relaxed border-0 bg-transparent resize-none flex-1 overflow-y-auto focus:outline-none placeholder:text-opacity-60 ${
+              className={`w-full text-sm sm:text-base leading-relaxed border-0 bg-transparent resize-none flex-1 overflow-y-auto focus:outline-none placeholder:text-opacity-60 ${
                 theme === 'dark'
                   ? 'text-white placeholder:text-gray-500'
                   : 'text-gray-900 placeholder:text-gray-500'
@@ -716,11 +716,11 @@ export default function BottomControlBar() {
           </div>
 
           {/* Bottom Controls */}
-          <div className={`flex items-center justify-between px-3 sm:px-6 py-2 sm:py-4 border-t ${
+          <div className={`flex items-center justify-between px-2 sm:px-6 py-1 sm:py-4 border-t ${
             theme === 'dark' ? 'border-gray-800' : 'border-gray-100'
           }`}>
             {/* Left: Style and Seed */}
-            <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
+            <div className="flex items-center gap-1 sm:gap-4 overflow-hidden">
               <button
                 onClick={() => {
                   const styles = ['photorealistic', 'stylized', 'vintage', 'industrial', 'artistic'];
@@ -729,7 +729,7 @@ export default function BottomControlBar() {
                   setSelectedStyle(styles[nextIndex]);
                 }}
                 disabled={false}
-                className={`w-20 sm:w-32 text-left text-xs sm:text-sm font-medium cursor-pointer transition-all duration-200 ease-out capitalize truncate ${
+                className={`w-16 sm:w-32 text-left text-xs font-medium cursor-pointer transition-all duration-200 ease-out capitalize truncate ${
                   theme === 'dark'
                     ? 'text-gray-300 hover:text-white'
                     : 'text-gray-700 hover:text-gray-900'
@@ -744,7 +744,7 @@ export default function BottomControlBar() {
                 value={seed} 
                 onChange={(e) => setSeed(parseInt(e.target.value, 10))}
                 disabled={false}
-                className={`w-16 sm:w-20 text-xs sm:text-sm text-center border-0 bg-transparent focus:outline-none ${
+                className={`w-12 sm:w-20 text-xs text-center border-0 bg-transparent focus:outline-none ${
                   theme === 'dark'
                     ? 'text-gray-300'
                     : 'text-gray-700'
@@ -757,7 +757,7 @@ export default function BottomControlBar() {
                 value={viewAngle}
                 onChange={(e) => setViewAngle(parseInt(e.target.value, 10))}
                 disabled={false}
-                className={`w-16 sm:w-20 text-xs text-center border-0 bg-transparent focus:outline-none cursor-pointer ${
+                className={`w-12 sm:w-20 text-xs text-center border-0 bg-transparent focus:outline-none cursor-pointer ${
                   theme === 'dark'
                     ? 'text-gray-300'
                     : 'text-gray-700'
@@ -774,19 +774,20 @@ export default function BottomControlBar() {
             </div>
 
             {/* Right: Minimalist Actions */}
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-1 sm:gap-4">
               {/* Quality Toggle */}
               <button
                 onClick={() => setHighQuality(!highQuality)}
                 disabled={false}
-                className={`text-xs sm:text-sm font-medium cursor-pointer transition-all duration-200 ease-out ${
+                className={`text-xs font-medium cursor-pointer transition-all duration-200 ease-out ${
                   theme === 'dark'
                     ? 'text-gray-300 hover:text-white'
                     : 'text-gray-700 hover:text-gray-900'
                 }`}
                 title={highQuality ? 'High Quality (12-15 min)' : 'Low Quality/Fast (2-3 min)'}
               >
-                {highQuality ? 'HIGH QUALITY' : 'LOW QUALITY'}
+                <span className="hidden sm:inline">{highQuality ? 'HIGH QUALITY' : 'LOW QUALITY'}</span>
+                <span className="sm:hidden">{highQuality ? 'HQ' : 'LQ'}</span>
               </button>
 
               {/* Queue Button - Always available when assets are loaded */}

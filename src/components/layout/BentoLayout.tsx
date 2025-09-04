@@ -114,10 +114,10 @@ export default function BentoLayout() {
                   {/* Asset Preview - Dynamically Centered */}
           {hasContent && isPreviewOpen && (
             <div 
-              className="absolute top-6 pointer-events-auto transition-all duration-300 ease-out"
+              className="absolute top-4 sm:top-6 pointer-events-auto transition-all duration-300 ease-out"
               style={{
-                left: (isGalleryOpen || isSceneOpen) ? '272px' : '16px', // Account for left panel + mobile padding
-                right: showQueuePanel ? '272px' : '16px', // Account for right panel + mobile padding
+                left: (isGalleryOpen || isSceneOpen) ? '272px' : '8px', // Tighter mobile padding
+                right: showQueuePanel ? '272px' : '8px', // Tighter mobile padding
                 display: 'flex',
                 justifyContent: 'center'
               }}
@@ -155,7 +155,7 @@ export default function BentoLayout() {
           />
         </motion.div>
 
-        {/* Scene Settings Toggle - Bottom Left */}
+        {/* Scene Settings Toggle - Bottom Left Corner */}
         {!isSceneOpen && !isGalleryOpen && (
           <motion.button
             initial={{ x: -50, opacity: 0 }}
@@ -167,14 +167,14 @@ export default function BentoLayout() {
               // Close gallery if open
               if (isGalleryOpen) toggleGallery();
             }}
-            className={`absolute bottom-4 left-4 sm:bottom-6 sm:left-6 z-50 ${getButtonStyle('text-green-600')}`}
+            className={`absolute bottom-2 left-2 sm:bottom-4 sm:left-4 z-50 ${getButtonStyle('text-green-600')}`}
             title="Scene Settings"
           >
-            <Sliders className="h-5 w-5" />
+            <Sliders className="h-4 w-4 sm:h-5 sm:w-5" />
           </motion.button>
         )}
 
-        {/* Gallery Toggle - Always visible when gallery is closed */}
+        {/* Gallery Toggle - Top Left Corner */}
         {!isGalleryOpen && !isSceneOpen && (
           <motion.button
             initial={{ x: -50, opacity: 0 }}
@@ -186,14 +186,14 @@ export default function BentoLayout() {
               // Close scene panel if open
               if (isSceneOpen) setIsSceneOpen(false);
             }}
-            className={`absolute top-1/2 left-4 sm:left-6 transform -translate-y-1/2 z-50 ${getButtonStyle('text-blue-600')}`}
-            title="Open Gallery"
+            className={`absolute top-2 left-2 sm:top-4 sm:left-4 z-50 ${getButtonStyle('text-blue-600')}`}
+            title="Gallery"
           >
-            <Library className="h-5 w-5" />
+            <Library className="h-4 w-4 sm:h-5 sm:w-5" />
           </motion.button>
         )}
 
-        {/* Queue Toggle - Top Right */}
+        {/* Queue Toggle - Top Right Corner */}
         {!showQueuePanel && (
           <motion.button
             initial={{ y: -50, opacity: 0 }}
@@ -201,15 +201,15 @@ export default function BentoLayout() {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsQueueOpen(true)}
-            className={`absolute top-4 right-4 sm:top-6 sm:right-6 z-40 ${getButtonStyle(queueCount > 0 ? 'bg-orange-600' : 'text-purple-600')}`}
-            title={queueCount > 0 ? `Open Queue (${queueCount} items)` : "Open Queue"}
+            className={`absolute top-2 right-2 sm:top-4 sm:right-4 z-40 ${getButtonStyle(queueCount > 0 ? 'bg-orange-600' : 'text-purple-600')}`}
+            title={queueCount > 0 ? `Queue (${queueCount})` : "Queue"}
           >
-            <Layers className="h-5 w-5" />
+            <Layers className="h-4 w-4 sm:h-5 sm:w-5" />
             {queueCount > 0 && (
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold"
+                className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold"
               >
                 {queueCount}
               </motion.div>
@@ -217,17 +217,17 @@ export default function BentoLayout() {
           </motion.button>
         )}
 
-        {/* Settings Toggle - Bottom Right */}
+        {/* Settings Toggle - Bottom Right Corner */}
         <motion.button
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={toggleSettings}
-          className={`absolute bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 ${getButtonStyle('text-purple-600')}`}
+          className={`absolute bottom-2 right-2 sm:bottom-4 sm:right-4 z-40 ${getButtonStyle('text-purple-600')}`}
           title="Settings"
         >
-          <Settings className="h-5 w-5" />
+          <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
         </motion.button>
 
 
@@ -236,8 +236,8 @@ export default function BentoLayout() {
           <div 
             className="absolute top-4 z-40 transition-all duration-300 ease-out"
             style={{
-              left: (isGalleryOpen || isSceneOpen) ? '272px' : '16px', // Account for left panel + mobile padding
-              right: showQueuePanel ? '272px' : '16px', // Account for right panel + mobile padding
+              left: (isGalleryOpen || isSceneOpen) ? '272px' : '8px', // Tighter mobile padding
+              right: showQueuePanel ? '272px' : '8px', // Tighter mobile padding
               display: 'flex',
               justifyContent: 'center'
             }}
@@ -267,9 +267,9 @@ export default function BentoLayout() {
             transition={{ duration: 0.25, ease: "easeOut" }}
             className="absolute bottom-0 z-20 transition-all duration-500"
             style={{
-              left: (isGalleryOpen || isSceneOpen) ? '272px' : '16px', // Mobile-friendly clearance
-              right: showQueuePanel ? '272px' : '16px', // Mobile-friendly clearance
-              bottom: '16px' // Reduced bottom margin for mobile
+              left: (isGalleryOpen || isSceneOpen) ? '272px' : '8px', // Tighter mobile clearance
+              right: showQueuePanel ? '272px' : '8px', // Tighter mobile clearance
+              bottom: '8px' // Minimal bottom margin for mobile
             }}
           >
             <BottomControlBar />
@@ -282,8 +282,8 @@ export default function BentoLayout() {
         <div 
           className="absolute bottom-4 z-40 transition-all duration-300 ease-out pointer-events-none"
           style={{
-            left: (isGalleryOpen || isSceneOpen) ? '272px' : '16px', // Account for left panel + mobile padding
-            right: showQueuePanel ? '272px' : '16px', // Account for right panel + mobile padding
+            left: (isGalleryOpen || isSceneOpen) ? '272px' : '8px', // Tighter mobile padding
+            right: showQueuePanel ? '272px' : '8px', // Tighter mobile padding
             display: 'flex',
             justifyContent: 'center'
           }}

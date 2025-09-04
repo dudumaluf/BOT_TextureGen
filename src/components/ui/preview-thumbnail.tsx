@@ -18,7 +18,7 @@ export default function PreviewThumbnail({
   src, 
   alt, 
   title, 
-  size = 60, 
+  size = 50, // Smaller default for mobile
   onPreview,
   className = "" 
 }: PreviewThumbnailProps) {
@@ -48,7 +48,12 @@ export default function PreviewThumbnail({
       <p className="text-xs font-medium mb-1 text-gray-600">{title}</p>
       <div 
         className={`relative overflow-hidden rounded cursor-pointer group ${className}`}
-        style={{ width: `${size}px`, height: `${size}px` }}
+        style={{ 
+          width: `${size}px`, 
+          height: `${size}px`,
+          minWidth: `${size}px`, // Prevent shrinking on mobile
+          minHeight: `${size}px`
+        }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onClick={onPreview}
