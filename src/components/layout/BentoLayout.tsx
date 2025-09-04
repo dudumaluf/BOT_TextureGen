@@ -186,7 +186,7 @@ export default function BentoLayout() {
               // Close gallery if open
               if (isGalleryOpen) toggleGallery();
             }}
-            className={`absolute top-1/2 left-2 transform translate-y-8 sm:bottom-4 sm:left-4 sm:transform-none z-50 ${getButtonStyle('text-green-600')}`}
+            className={`absolute top-1/2 left-2 transform translate-y-16 sm:bottom-4 sm:left-4 sm:transform-none z-50 ${getButtonStyle('text-green-600')}`}
             title="Scene Settings"
           >
             <Sliders className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -217,14 +217,14 @@ export default function BentoLayout() {
           </motion.button>
         )}
 
-        {/* Settings Toggle - Bottom Right Corner */}
+        {/* Settings Toggle - Center Right */}
         <motion.button
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
+          initial={{ x: 50, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={toggleSettings}
-          className={`absolute bottom-4 right-2 sm:bottom-4 sm:right-4 z-40 ${getButtonStyle('text-purple-600')}`}
+          className={`absolute top-1/2 right-2 sm:right-4 transform -translate-y-1/2 z-40 ${getButtonStyle('text-purple-600')}`}
           title="Settings"
         >
           <Settings className="h-4 w-4 sm:h-5 sm:w-5" />

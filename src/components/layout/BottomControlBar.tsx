@@ -591,7 +591,7 @@ export default function BottomControlBar() {
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className={`relative rounded-2xl border shadow-lg overflow-hidden transition-all duration-300 ${
+          className={`relative rounded-2xl border shadow-lg overflow-hidden transition-all duration-300 w-12 h-12 sm:w-16 sm:h-16 aspect-square ${
             modelUrl
               ? theme === 'dark' 
                 ? 'bg-green-900/20 border-green-700/50' 
@@ -614,7 +614,7 @@ export default function BottomControlBar() {
           <motion.div
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center relative aspect-square"
+            className="w-full h-full flex items-center justify-center"
           >
             <Box className={`h-6 w-6 transition-colors duration-300 ${
               modelUrl 
@@ -629,7 +629,7 @@ export default function BottomControlBar() {
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.3, ease: "easeOut", delay: 0.1 }}
-          className={`relative rounded-2xl border shadow-lg ${
+          className={`relative rounded-2xl border shadow-lg w-12 h-12 sm:w-16 sm:h-16 aspect-square ${
             theme === 'dark' 
               ? 'bg-gray-900/95 border-gray-700' 
               : 'bg-white/95 border-gray-200'
@@ -652,7 +652,7 @@ export default function BottomControlBar() {
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center aspect-square"
+                className="w-full h-full flex items-center justify-center"
               >
                 <ImageIcon className={`h-6 w-6 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
               </motion.div>
