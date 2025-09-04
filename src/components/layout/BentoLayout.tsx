@@ -133,7 +133,7 @@ export default function BentoLayout() {
         <motion.div
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="absolute top-4 left-2 sm:top-1 sm:left-1 pointer-events-auto z-40"
+          className="absolute top-2 left-2 sm:top-1 sm:left-1 pointer-events-auto z-40"
           onClick={() => {
             // Quick test: Load sample animated GLB
             const { setModelUrl, setModelId, setModelFileName } = useAppStore.getState();
