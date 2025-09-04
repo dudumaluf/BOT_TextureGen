@@ -108,7 +108,7 @@ function ModelRenderer({ modelUrl }: { modelUrl: string }) {
 
     // Stop all other animations first
     Object.values(actions).forEach((otherAction) => {
-      if (otherAction !== action) {
+      if (otherAction && otherAction !== action) {
         otherAction.stop();
         otherAction.reset();
         otherAction.weight = 0;
