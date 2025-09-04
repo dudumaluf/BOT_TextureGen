@@ -1,7 +1,6 @@
 "use client";
 
 import { useAppStore } from "@/store/appStore";
-import Image from "next/image";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Download } from "lucide-react";
@@ -56,7 +55,7 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
   }
 
   return (
-    <div className={`backdrop-blur-md rounded-lg sm:rounded-xl border shadow-lg max-w-full overflow-x-auto ${
+    <div className={`backdrop-blur-md rounded-lg sm:rounded-xl border shadow-lg max-w-full overflow-hidden ${
       theme === 'dark' 
         ? 'bg-gray-900/95 border-gray-700' 
         : 'bg-white/95 border-white/20'
@@ -77,26 +76,20 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
             <X className="h-3 w-3" />
           </motion.button>
         )}
-        <div className="flex items-center gap-1 sm:gap-3">
+        <div className="flex items-center gap-1 sm:gap-3 min-w-0">
             {referenceImageUrl && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 }}
-                className="text-center"
               >
-                <div className="text-center">
-                  <p className="hidden sm:block text-xs font-medium mb-1 text-gray-600">Ref</p>
-                  <div className="relative w-[40px] h-[40px] sm:w-[60px] sm:h-[60px] overflow-hidden rounded">
-                    <Image 
-                      src={referenceImageUrl} 
-                      alt="Reference" 
-                      width={60} 
-                      height={60} 
-                      className="rounded transition-transform duration-300 hover:scale-110 object-cover w-full h-full" 
-                    />
-                  </div>
-                </div>
+                <PreviewThumbnail
+                  src={referenceImageUrl}
+                  alt="Reference Image"
+                  title="Ref"
+                  size={40} // Same size as other thumbnails
+                  onPreview={() => openPreview(referenceImageUrl, "Reference Image", "Reference Image")}
+                />
               </motion.div>
             )}
             {generatedTextures.depth_preview && (
