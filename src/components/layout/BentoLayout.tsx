@@ -38,7 +38,7 @@ export default function BentoLayout() {
 
   const hasGenerations = generations && generations.length > 0;
   const hasQueue = queueCount > 0;
-  const hasContent = generatedTextures.diffuse || generatedTextures.depth_preview || generatedTextures.front_preview || referenceImageUrl;
+  const hasContent = generatedTextures.diffuse || generatedTextures.normal || generatedTextures.height || generatedTextures.thumbnail || generatedTextures.depth_preview || generatedTextures.front_preview || referenceImageUrl;
 
   // Common button styling based on theme
   const getButtonStyle = (hoverColor: string) => 
@@ -59,7 +59,7 @@ export default function BentoLayout() {
   };
 
   return (
-    <div className={`h-screen w-screen relative ${theme === 'dark' ? 'dark bg-gray-900' : 'bg-gray-100'}`}>
+    <div className={`h-screen w-screen relative overflow-hidden ${theme === 'dark' ? 'dark bg-gray-900' : 'bg-gray-100'}`}>
       {/* Full-Screen 3D Viewer - Never Resizes */}
       <div className="absolute inset-0">
         <Viewer />
@@ -74,7 +74,7 @@ export default function BentoLayout() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -320, opacity: 0 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className={`absolute top-0 left-0 bottom-0 w-72 z-20 pointer-events-auto ${
+            className={`absolute top-0 left-0 bottom-0 w-64 sm:w-72 z-20 pointer-events-auto ${
               theme === 'dark' 
                 ? 'bg-gray-900/95 border-r border-gray-700' 
                 : 'bg-white border-r border-gray-200'
@@ -97,7 +97,7 @@ export default function BentoLayout() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 320, opacity: 0 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className={`absolute top-0 right-0 bottom-0 w-72 z-20 pointer-events-auto ${
+            className={`absolute top-0 right-0 bottom-0 w-64 sm:w-72 z-20 pointer-events-auto ${
               theme === 'dark' 
                 ? 'bg-gray-900/95 border-l border-gray-700' 
                 : 'bg-white border-l border-gray-200'
@@ -116,8 +116,8 @@ export default function BentoLayout() {
             <div 
               className="absolute top-6 pointer-events-auto transition-all duration-300 ease-out"
               style={{
-                left: (isGalleryOpen || isSceneOpen) ? '288px' : '0px', // Account for left panel
-                right: showQueuePanel ? '320px' : '0px', // Account for right panel
+                left: (isGalleryOpen || isSceneOpen) ? '272px' : '16px', // Account for left panel + mobile padding
+                right: showQueuePanel ? '272px' : '16px', // Account for right panel + mobile padding
                 display: 'flex',
                 justifyContent: 'center'
               }}
@@ -133,7 +133,7 @@ export default function BentoLayout() {
         <motion.div
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="absolute top-1 left-1 pointer-events-auto z-40"
+          className="absolute top-2 left-2 sm:top-1 sm:left-1 pointer-events-auto z-40"
           onClick={() => {
             // Quick test: Load sample animated GLB
             const { setModelUrl, setModelId, setModelFileName } = useAppStore.getState();
@@ -149,7 +149,7 @@ export default function BentoLayout() {
             alt="TextureGen"
             width={115}
             height={115}
-            className="object-contain"
+            className="object-contain w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28"
             priority
             unoptimized
           />
@@ -167,7 +167,7 @@ export default function BentoLayout() {
               // Close gallery if open
               if (isGalleryOpen) toggleGallery();
             }}
-            className={`absolute bottom-4 left-4 z-50 ${getButtonStyle('text-green-600')}`}
+            className={`absolute bottom-4 left-4 sm:bottom-6 sm:left-6 z-50 ${getButtonStyle('text-green-600')}`}
             title="Scene Settings"
           >
             <Sliders className="h-5 w-5" />
@@ -186,7 +186,7 @@ export default function BentoLayout() {
               // Close scene panel if open
               if (isSceneOpen) setIsSceneOpen(false);
             }}
-            className={`absolute top-1/2 left-4 transform -translate-y-1/2 z-50 ${getButtonStyle('text-blue-600')}`}
+            className={`absolute top-1/2 left-4 sm:left-6 transform -translate-y-1/2 z-50 ${getButtonStyle('text-blue-600')}`}
             title="Open Gallery"
           >
             <Library className="h-5 w-5" />
@@ -201,7 +201,7 @@ export default function BentoLayout() {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsQueueOpen(true)}
-            className={`absolute top-4 right-4 z-40 ${getButtonStyle(queueCount > 0 ? 'bg-orange-600' : 'text-purple-600')}`}
+            className={`absolute top-4 right-4 sm:top-6 sm:right-6 z-40 ${getButtonStyle(queueCount > 0 ? 'bg-orange-600' : 'text-purple-600')}`}
             title={queueCount > 0 ? `Open Queue (${queueCount} items)` : "Open Queue"}
           >
             <Layers className="h-5 w-5" />
@@ -224,7 +224,7 @@ export default function BentoLayout() {
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={toggleSettings}
-          className={`absolute bottom-4 right-4 z-40 ${getButtonStyle('text-purple-600')}`}
+          className={`absolute bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 ${getButtonStyle('text-purple-600')}`}
           title="Settings"
         >
           <Settings className="h-5 w-5" />
@@ -232,18 +232,28 @@ export default function BentoLayout() {
 
 
         {/* Texture Preview Toggle - Top Center (only when closed) */}
-        {hasContent && !isPreviewOpen && !hasAnimations && (
-          <motion.button
-            initial={{ y: -50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setIsPreviewOpen(true)}
-            className={`absolute top-4 left-1/2 transform -translate-x-1/2 z-40 ${getButtonStyle('text-blue-600')}`}
-            title="Show Texture Preview"
+        {hasContent && !isPreviewOpen && (
+          <div 
+            className="absolute top-4 z-40 transition-all duration-300 ease-out"
+            style={{
+              left: (isGalleryOpen || isSceneOpen) ? '272px' : '16px', // Account for left panel + mobile padding
+              right: showQueuePanel ? '272px' : '16px', // Account for right panel + mobile padding
+              display: 'flex',
+              justifyContent: 'center'
+            }}
           >
-            <Eye className="h-5 w-5" />
-          </motion.button>
+            <motion.button
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setIsPreviewOpen(true)}
+              className={getButtonStyle('text-blue-600')}
+              title="Show Texture Preview"
+            >
+              <Eye className="h-5 w-5" />
+            </motion.button>
+          </div>
         )}
       </div>
 
@@ -257,9 +267,9 @@ export default function BentoLayout() {
             transition={{ duration: 0.25, ease: "easeOut" }}
             className="absolute bottom-0 z-20 transition-all duration-500"
             style={{
-              left: (isGalleryOpen || isSceneOpen) ? '288px' : '80px', // More clearance from left edge
-              right: showQueuePanel ? '320px' : '80px', // More clearance from right edge  
-              bottom: '32px'
+              left: (isGalleryOpen || isSceneOpen) ? '272px' : '16px', // Mobile-friendly clearance
+              right: showQueuePanel ? '272px' : '16px', // Mobile-friendly clearance
+              bottom: '16px' // Reduced bottom margin for mobile
             }}
           >
             <BottomControlBar />
@@ -272,8 +282,8 @@ export default function BentoLayout() {
         <div 
           className="absolute bottom-4 z-40 transition-all duration-300 ease-out pointer-events-none"
           style={{
-            left: (isGalleryOpen || isSceneOpen) ? '288px' : '0px', // Account for left panel
-            right: showQueuePanel ? '320px' : '0px', // Account for right panel
+            left: (isGalleryOpen || isSceneOpen) ? '272px' : '16px', // Account for left panel + mobile padding
+            right: showQueuePanel ? '272px' : '16px', // Account for right panel + mobile padding
             display: 'flex',
             justifyContent: 'center'
           }}
