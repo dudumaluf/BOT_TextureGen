@@ -444,7 +444,7 @@ export default function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
                         // Create generation pair for upgrade functionality
                         const generationPair = {
                           id: fullGeneration.id,
-                          fastGeneration: fullGeneration.high_quality ? null : fullGeneration,
+                          fastGeneration: fullGeneration.high_quality ? undefined : fullGeneration,
                           hqGeneration: fullGeneration.high_quality ? fullGeneration : undefined,
                           canUpgrade: !fullGeneration.high_quality,
                           isUpgrading: false,
