@@ -17,7 +17,9 @@ TextureGen is an innovative web application that revolutionizes the 3D texturing
 - **🎬 Intro Animations**: Professional company logo and app branding animations
 - **🌓 Dark/Light Theme**: Complete theme system with proper color consistency
 - **📚 Generation Gallery**: View and manage your texture generation history with advanced controls
+- **🖼️ Advanced Image Viewer**: Full-screen modal with zoom, pan, and smooth transitions
 - **⚙️ Advanced Settings**: Customizable style templates and generation parameters
+- **🎯 Real-Time Previews**: Live texture thumbnails with hover effects and download options
 
 ### **Enterprise Architecture**
 - **🔐 Secure Authentication**: User management with Supabase Auth

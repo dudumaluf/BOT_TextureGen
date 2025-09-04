@@ -1,8 +1,10 @@
 "use client";
 
-import { useAppStore } from "@/store/appStore";
+import { useAppStore, type ModelPreset } from "@/store/appStore";
+import { getActiveModelPreset, createCustomPreset, samplerOptions, schedulerOptions } from "@/lib/model-presets";
+import ModelPresetEditor from "./ModelPresetEditor";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Palette, Settings, Moon, Sun, Sliders, Save, RotateCcw, Plus, Trash2, LogOut } from "lucide-react";
+import { X, Palette, Settings, Moon, Sun, Sliders, Save, RotateCcw, Plus, Trash2, LogOut, Edit, Copy, Zap, Target } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
@@ -15,10 +17,16 @@ export default function SettingsModal() {
     isSettingsOpen,
     toggleSettings,
     theme,
-    setTheme
+    setTheme,
+    modelPresets,
+    activeModelPresetId,
+    setActiveModelPreset,
+    addModelPreset,
+    updateModelPreset,
+    deleteModelPreset
   } = useAppStore();
   
-  const [activeTab, setActiveTab] = useState<'styles' | 'appearance' | 'advanced'>('styles');
+  const [activeTab, setActiveTab] = useState<'models' | 'styles' | 'appearance' | 'advanced'>('models');
   
   // Editable style templates state
   const [styleTemplates, setStyleTemplates] = useState<Record<string, string>>({
@@ -33,10 +41,29 @@ export default function SettingsModal() {
   const [newStyleName, setNewStyleName] = useState('');
   const [showAddStyle, setShowAddStyle] = useState(false);
   
+  // Model preset management state
+  const [editingPreset, setEditingPreset] = useState<string | null>(null);
+  const [showAddPreset, setShowAddPreset] = useState(false);
+  const [newPresetName, setNewPresetName] = useState('');
+
+  const handleCreateNewPreset = () => {
+    // Create a new preset based on the current active preset
+    const activePreset = modelPresets.find(p => p.isActive) || modelPresets[0];
+    const newPreset = createCustomPreset(
+      activePreset,
+      { displayName: 'New Custom Preset' },
+      'New Custom Preset'
+    );
+    addModelPreset(newPreset);
+    setEditingPreset(newPreset.id);
+    toast.success('New preset created');
+  };
+  
   const supabase = createClient();
   const router = useRouter();
 
   const tabs = [
+    { id: 'models', label: 'AI Models', icon: Settings },
     { id: 'styles', label: 'Style Templates', icon: Palette },
     { id: 'appearance', label: 'Appearance', icon: Sun },
     { id: 'advanced', label: 'Advanced', icon: Sliders }
@@ -174,6 +201,169 @@ export default function SettingsModal() {
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6">
               <div className="max-w-4xl mx-auto">
+                
+                {/* Models Tab */}
+                {activeTab === 'models' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-6"
+                  >
+                    <div>
+                      <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}>AI Model Presets</h3>
+                      <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Configure different AI models with optimized parameters for speed and quality</p>
+                    </div>
+                    
+                    {/* Header Actions */}
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                          {modelPresets.length} preset{modelPresets.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={handleCreateNewPreset}
+                        className={`p-2 rounded-lg transition-colors ${
+                          theme === 'dark'
+                            ? 'text-gray-400 hover:text-blue-400 hover:bg-blue-900/30'
+                            : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
+                        }`}
+                        title="Create new preset"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </motion.button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {modelPresets.map((preset) => (
+                        <div key={preset.id}>
+                          {editingPreset === preset.id ? (
+                            <ModelPresetEditor
+                              preset={preset}
+                              isEditing={true}
+                              onSave={(updatedPreset) => {
+                                updateModelPreset(preset.id, updatedPreset);
+                                setEditingPreset(null);
+                              }}
+                              onCancel={() => setEditingPreset(null)}
+                              onDuplicate={(newPreset) => {
+                                addModelPreset(newPreset);
+                              }}
+                              theme={theme}
+                            />
+                          ) : (
+                            <motion.div 
+                              className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                                preset.isActive
+                                  ? theme === 'dark'
+                                    ? 'bg-blue-900/30 border-blue-500 shadow-lg'
+                                    : 'bg-blue-50 border-blue-300 shadow-lg'
+                                  : theme === 'dark'
+                                    ? 'bg-gray-800 border-gray-700 hover:border-gray-600'
+                                    : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                              }`}
+                              whileHover={{ y: -1 }}
+                              onClick={() => !preset.isActive && setActiveModelPreset(preset.id)}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  {/* Category icon */}
+                                  <div className={`p-2 rounded-lg ${
+                                    preset.category === 'lightning' 
+                                      ? 'bg-yellow-500/20 text-yellow-600' 
+                                      : 'bg-green-500/20 text-green-600'
+                                  }`}>
+                                    {preset.category === 'lightning' ? <Zap className="h-4 w-4" /> : <Target className="h-4 w-4" />}
+                                  </div>
+                                  
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <h4 className={`font-semibold ${theme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>
+                                        {preset.displayName}
+                                      </h4>
+                                      {preset.isActive && (
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                      )}
+                                    </div>
+                                    <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                      {preset.performance.fastModeTime} • Steps: {preset.ksampler.steps} • CFG: {preset.ksampler.cfg}
+                                    </p>
+                                  </div>
+                                </div>
+                                
+                                {/* Compact action buttons */}
+                                <div className="flex items-center gap-1">
+                                  <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const duplicatedPreset = createCustomPreset(
+                                        preset,
+                                        { displayName: `${preset.displayName} Copy` },
+                                        `${preset.displayName} Copy`
+                                      );
+                                      addModelPreset(duplicatedPreset);
+                                      toast.success('Preset duplicated');
+                                    }}
+                                    className={`p-2 rounded-lg transition-colors ${
+                                      theme === 'dark'
+                                        ? 'text-gray-400 hover:text-blue-400 hover:bg-blue-900/30'
+                                        : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
+                                    }`}
+                                    title="Duplicate preset"
+                                  >
+                                    <Copy className="h-3 w-3" />
+                                  </motion.button>
+                                  
+                                  <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingPreset(preset.id);
+                                    }}
+                                    className={`p-2 rounded-lg transition-colors ${
+                                      theme === 'dark'
+                                        ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700'
+                                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                                    }`}
+                                    title="Edit parameters"
+                                  >
+                                    <Edit className="h-3 w-3" />
+                                  </motion.button>
+                                  
+                                  <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (preset.isCustom || confirm(`Delete "${preset.displayName}" preset?`)) {
+                                        deleteModelPreset(preset.id);
+                                        toast.success('Preset deleted');
+                                      }
+                                    }}
+                                    className={`p-2 rounded-lg transition-colors ${
+                                      theme === 'dark'
+                                        ? 'text-red-400 hover:text-red-300 hover:bg-red-900/30'
+                                        : 'text-red-500 hover:text-red-600 hover:bg-red-50'
+                                    }`}
+                                    title="Delete preset"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </motion.button>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
                 
                 {/* Style Templates Tab */}
                 {activeTab === 'styles' && (

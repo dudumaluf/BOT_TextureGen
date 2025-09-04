@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServer } from "@/lib/supabase-server";
 import { queueTextureGeneration } from "@/lib/comfyui";
 import { getWebhookUrl, getWebhookSecret } from "@/lib/webhook-security";
+import { applyPresetToWorkflow, defaultModelPresets, getActiveModelPreset } from "@/lib/model-presets";
 import workflow from "@/lib/workflow.json";
 
 // Deep clone the workflow to avoid mutations
@@ -9,7 +10,7 @@ const getWorkflowCopy = () => JSON.parse(JSON.stringify(workflow));
 
 export async function POST(request: Request) {
   try {
-    const { modelFileName, modelId, referenceImageUrl, referenceImageName, mainPrompt, selectedStyle, seed, highQuality, referenceStrength } = await request.json();
+    const { modelFileName, modelId, referenceImageUrl, referenceImageName, mainPrompt, selectedStyle, seed, highQuality, referenceStrength, modelPresetId, modelPresetData, viewAngle } = await request.json();
 
     if (!modelFileName || !modelId || !mainPrompt || !referenceImageName || !referenceImageUrl || seed === undefined) {
       return NextResponse.json({ success: false, error: "Missing required parameters." }, { status: 400 });
@@ -55,8 +56,29 @@ export async function POST(request: Request) {
       highQuality: highQuality || false
     });
 
-    // 2. Prepare the workflow with our data and speed optimizations
-    const apiWorkflow = getWorkflowCopy();
+    // 2. Prepare the workflow with our data and model preset optimizations
+    let apiWorkflow = getWorkflowCopy();
+    
+    // Apply model preset if provided
+    if (modelPresetData) {
+      console.log(`Generation: Applying model preset data for "${modelPresetData.displayName}"`);
+      console.log(`Generation: Model path: ${modelPresetData.modelPath}`);
+      console.log(`Generation: KSampler - Steps: ${modelPresetData.ksampler.steps}, CFG: ${modelPresetData.ksampler.cfg}, Sampler: ${modelPresetData.ksampler.sampler_name}`);
+      
+      apiWorkflow = applyPresetToWorkflow(apiWorkflow, modelPresetData);
+      console.log(`Generation: Successfully applied preset "${modelPresetData.displayName}"`);
+    } else if (modelPresetId) {
+      console.log(`Generation: Applying model preset by ID ${modelPresetId}`);
+      const preset = defaultModelPresets.find(p => p.id === modelPresetId);
+      if (preset) {
+        console.log(`Generation: Found default preset "${preset.displayName}"`);
+        apiWorkflow = applyPresetToWorkflow(apiWorkflow, preset);
+      } else {
+        console.warn(`Generation: Model preset ${modelPresetId} not found, using standard workflow`);
+      }
+    } else {
+      console.log(`Generation: No model preset specified, using standard workflow`);
+    }
     
     // Set the input parameters with smart prompt enhancement
     const styleTemplates = {
@@ -74,6 +96,15 @@ export async function POST(request: Request) {
     apiWorkflow["180"].inputs.seed = seed;
     apiWorkflow["605"].inputs.text = enhancedStylePrompt;
     apiWorkflow["606"].inputs.text = mainPrompt;
+    
+    // Set view angle for depth map selection (Node 313)
+    if (viewAngle !== undefined && viewAngle >= 1 && viewAngle <= 6) {
+      apiWorkflow["313"].inputs.value = viewAngle;
+      console.log(`Generation: Set view angle to ${viewAngle} for node 313`);
+    } else {
+      console.log(`Generation: Invalid or missing viewAngle: ${viewAngle}, using default value 1`);
+      apiWorkflow["313"].inputs.value = 1; // Ensure we always have a valid value
+    }
     
     // Set reference strength (IPAdapter weight) - default to 0.7 if not provided
     const finalReferenceStrength = referenceStrength !== undefined ? referenceStrength : 0.7;
@@ -105,21 +136,52 @@ export async function POST(request: Request) {
       apiWorkflow["383"].inputs.images = ["227", 0]; // Preview uses second upscaler
     }
 
-    // 4. Add the webhook node to capture the outputs
-    const webhookNodeId = "999"; // Use a high number to avoid conflicts
-    apiWorkflow[webhookNodeId] = {
+    // 4. Add webhook nodes - separate early previews for faster response
+    
+    // Depth preview webhook (executes as soon as depth map is ready)
+    apiWorkflow["997"] = {
       "inputs": {
         "webhook_url": getWebhookUrl(),
         "generationId": generationId.toString(),
         "webhook_secret": getWebhookSecret(),
-        "diffuse": ["104", 0],    // Connect to diffuse texture source (CV2 Inpaint Texture)
-        "normal": ["373", 0],     // Connect to normal map source (Normal Map Simple)
-        "height": ["454", 0],     // Connect to height map source (Deep Bump)
-        "thumbnail": ["450", 0]   // Connect to thumbnail source (ImageFromBatch)
+        "depth_preview": ["314", 0] // Only depth map - executes immediately when node 314 completes
       },
       "class_type": "WebhookNode",
       "_meta": {
-        "title": "AUTOMATA Webhook"
+        "title": "Depth Preview"
+      }
+    };
+    
+    // Front preview webhook (executes as soon as front view is ready)
+    apiWorkflow["998"] = {
+      "inputs": {
+        "webhook_url": getWebhookUrl(),
+        "generationId": generationId.toString(),
+        "webhook_secret": getWebhookSecret(),
+        "front_preview": ["181", 0]  // Only front view - executes immediately when node 181 completes
+      },
+      "class_type": "WebhookNode",
+      "_meta": {
+        "title": "Front Preview"
+      }
+    };
+    
+    // Final completion webhook (executes when all textures are ready)
+    apiWorkflow["999"] = {
+      "inputs": {
+        "webhook_url": getWebhookUrl(),
+        "generationId": generationId.toString(),
+        "webhook_secret": getWebhookSecret(),
+        "diffuse": ["104", 0],
+        "normal": ["373", 0],
+        "height": ["454", 0],
+        "thumbnail": ["226", 0],
+        "depth_preview": ["314", 0], // Include depth again for completeness
+        "front_preview": ["181", 0]  // Include front preview for completeness
+      },
+      "class_type": "WebhookNode",
+      "_meta": {
+        "title": "Final Completion"
       }
     };
 

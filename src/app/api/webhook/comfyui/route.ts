@@ -16,6 +16,132 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const { generationId, textures } = body;
+    
+    // Check if this is an early preview (depth OR front view, but no final textures)
+    const isEarlyPreview = textures && (textures.depth_preview || textures.front_preview) && !textures.diffuse;
+    
+    if (isEarlyPreview) {
+      console.log(`Webhook: Received early preview for generation ${generationId}`, {
+        depthPreviewUrl: textures.depth_preview,
+        frontPreviewUrl: textures.front_preview
+      });
+      
+      // Store the depth preview in the database so the frontend can see it
+      const supabase = createServer();
+      
+      try {
+        const updateData: any = {};
+        
+        // Process depth preview if available
+        if (textures.depth_preview) {
+          const depthUrl = textures.depth_preview;
+          const ipv4Url = depthUrl.replace('localhost', '127.0.0.1');
+          console.log(`Webhook: Downloading depth preview from: ${ipv4Url}`);
+          
+          const depthResponse = await fetch(ipv4Url);
+          if (depthResponse.ok) {
+            const imageBuffer = await depthResponse.arrayBuffer();
+            const uint8Array = new Uint8Array(imageBuffer);
+            
+            const fileName = `${generationId}_depth_preview.png`;
+            const storagePath = `generations/${generationId}/${fileName}`;
+            
+            const { error: uploadError } = await supabase.storage
+              .from('generated_textures')
+              .upload(storagePath, uint8Array, {
+                contentType: 'image/png',
+                upsert: true
+              });
+            
+            if (!uploadError) {
+              const { data: { publicUrl } } = supabase.storage
+                .from('generated_textures')
+                .getPublicUrl(storagePath);
+              updateData.depth_preview_storage_path = publicUrl;
+              console.log(`Webhook: Uploaded depth preview to Supabase: ${publicUrl}`);
+            } else {
+              updateData.depth_preview_storage_path = depthUrl;
+              console.error(`Webhook: Upload error for depth preview:`, uploadError);
+            }
+          } else {
+            updateData.depth_preview_storage_path = depthUrl;
+          }
+        }
+        
+        // Process front preview if available
+        if (textures.front_preview) {
+          const frontUrl = textures.front_preview;
+          const ipv4Url = frontUrl.replace('localhost', '127.0.0.1');
+          console.log(`Webhook: Downloading front preview from: ${ipv4Url}`);
+          
+          const frontResponse = await fetch(ipv4Url);
+          if (frontResponse.ok) {
+            const imageBuffer = await frontResponse.arrayBuffer();
+            const uint8Array = new Uint8Array(imageBuffer);
+            
+            const fileName = `${generationId}_front_preview.png`;
+            const storagePath = `generations/${generationId}/${fileName}`;
+            
+            const { error: uploadError } = await supabase.storage
+              .from('generated_textures')
+              .upload(storagePath, uint8Array, {
+                contentType: 'image/png',
+                upsert: true
+              });
+            
+            if (!uploadError) {
+              const { data: { publicUrl } } = supabase.storage
+                .from('generated_textures')
+                .getPublicUrl(storagePath);
+              updateData.front_preview_storage_path = publicUrl;
+              console.log(`Webhook: Uploaded front preview to Supabase: ${publicUrl}`);
+            } else {
+              updateData.front_preview_storage_path = frontUrl;
+              console.error(`Webhook: Upload error for front preview:`, uploadError);
+            }
+          } else {
+            updateData.front_preview_storage_path = frontUrl;
+          }
+        }
+        
+        // Update the generation with the previews (partial updates are fine)
+        if (Object.keys(updateData).length > 0) {
+          const { error: updateError } = await supabase
+            .from('generations')
+            .update(updateData)
+            .eq('id', generationId);
+          
+          if (updateError) {
+            console.error("Webhook: Error updating early previews", updateError);
+          } else {
+            const previewType = updateData.depth_preview_storage_path ? 'depth' : 'front';
+            console.log(`Webhook: Successfully stored ${previewType} preview for generation ${generationId}`, updateData);
+          }
+        }
+        
+      } catch (error) {
+        console.error(`Webhook: Error processing early previews:`, error);
+        // Store the ComfyUI URLs as fallback
+        const fallbackData: any = {};
+        if (textures.depth_preview) fallbackData.depth_preview_storage_path = textures.depth_preview;
+        if (textures.front_preview) fallbackData.front_preview_storage_path = textures.front_preview;
+        
+        if (Object.keys(fallbackData).length > 0) {
+          await supabase
+            .from('generations')
+            .update(fallbackData)
+            .eq('id', generationId);
+        }
+      }
+      
+      return NextResponse.json({ 
+        success: true, 
+        message: `Early preview ready for generation ${generationId}`,
+        isEarlyPreview: true,
+        depthPreviewUrl: textures.depth_preview,
+        frontPreviewUrl: textures.front_preview
+      });
+    }
 
     console.log(`Webhook: Received completion for generation ${generationId}`, {
       textureTypes: Object.keys(textures || {}),

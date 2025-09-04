@@ -37,10 +37,15 @@ export default function BottomControlBar() {
     seed,
     isLoading,
     highQuality,
+    viewAngle,
+    showDepthPreview,
     currentGeneration,
     queueCount,
     theme,
     promptPanelHeight,
+    activeModelPresetId,
+    modelPresets,
+    userEmail,
     setModelUrl, 
     setIsLoading,
     setMainPrompt,
@@ -53,9 +58,14 @@ export default function BottomControlBar() {
     setModelFileName,
     setSeed,
     setHighQuality,
+    setViewAngle,
+    setShowDepthPreview,
     setCurrentGeneration,
     setCanUpgrade,
     addToQueue,
+    addToContinuousQueue,
+    addToBatchQueue,
+    removeFromQueue,
     toggleBottomBar,
     setGenerations,
     setPromptPanelHeight,
@@ -91,19 +101,57 @@ export default function BottomControlBar() {
             .eq('id', currentGenerationId)
             .single() as { data: GenerationRecord | null, error: any };
           
+          // If generation was deleted, stop polling
+          if (error && (error.code === 'PGRST116' || error.message?.includes('406'))) {
+            console.log(`Polling: Generation ${currentGenerationId} was deleted, stopping polling`);
+            setIsLoading(false);
+            setCurrentGenerationId(null);
+            clearInterval(pollInterval);
+            return;
+          }
+          
+          // Check for early previews (depth_preview or front_preview) even while processing
+          if (!error && generation) {
+            const currentTextures = useAppStore.getState().generatedTextures;
+            const hasNewDepthPreview = generation.depth_preview_storage_path && 
+              generation.depth_preview_storage_path !== currentTextures.depth_preview;
+            const hasNewFrontPreview = generation.front_preview_storage_path && 
+              generation.front_preview_storage_path !== currentTextures.front_preview;
+            
+            // Update previews immediately when available
+            if (hasNewDepthPreview || hasNewFrontPreview) {
+              console.log(`Polling: Found early previews for ${currentGenerationId}`, {
+                depth: !!generation.depth_preview_storage_path,
+                front: !!generation.front_preview_storage_path
+              });
+              
+              const updatedTextures = {
+                ...currentTextures,
+                ...(generation.depth_preview_storage_path && { depth_preview: generation.depth_preview_storage_path }),
+                ...(generation.front_preview_storage_path && { front_preview: generation.front_preview_storage_path })
+              };
+              
+              setGeneratedTextures(updatedTextures);
+            }
+          }
+          
           if (!error && generation && generation.status === 'completed') {
             console.log(`Polling: Current generation ${currentGenerationId} completed!`);
+            console.log('Setting isLoading to false...');
             
             const textureData = {
               diffuse: generation.diffuse_storage_path || null,
               normal: generation.normal_storage_path || null,
               height: generation.height_storage_path || null,
-              thumbnail: generation.thumbnail_storage_path || null
+              thumbnail: generation.thumbnail_storage_path || null,
+              depth_preview: generation.depth_preview_storage_path || null,
+              front_preview: generation.front_preview_storage_path || null
             };
             
             setGeneratedTextures(textureData);
             setIsLoading(false);
             setCurrentGenerationId(null);
+            console.log('isLoading set to false, currentGenerationId cleared');
             
             // Check if this was an upgrade generation
             const wasUpgrade = generation.high_quality;
@@ -177,6 +225,7 @@ export default function BottomControlBar() {
     if (!file) return;
 
     setIsLoading(true);
+    
     const formData = new FormData();
     formData.append("file", file);
 
@@ -254,52 +303,246 @@ export default function BottomControlBar() {
     const useProgressiveMode = !highQuality;
     const actualQuality = useProgressiveMode ? false : highQuality;
 
-    setIsLoading(true);
+    // If this is the first generation, set loading state
+    if (!isLoading) {
+      setIsLoading(true);
+    }
+    
+    // Create queue item for continuous processing
+    const queueItem = {
+      id: Date.now().toString(),
+      type: 'generation' as const,
+      modelFileName,
+      modelId,
+      referenceImageUrl,
+      referenceImageName,
+      mainPrompt,
+      selectedStyle,
+                  seed,
+            referenceStrength,
+            highQuality: actualQuality,
+            status: 'queued',
+            viewAngle,
+            userId: userEmail || undefined
+    };
+    
+    // Add to continuous queue (auto-starts processing)
+    addToContinuousQueue(queueItem);
     
     if (useProgressiveMode) {
-      toast.info("🚀 Starting fast preview... (2-3 minutes)");
+      toast.success(`🚀 Added "${mainPrompt.split(' ').slice(0, 3).join(' ')}" to processing queue`);
     } else {
-      toast.info("Starting high quality generation... (12-15 minutes)");
+      toast.success(`✨ Added HQ "${mainPrompt.split(' ').slice(0, 3).join(' ')}" to processing queue`);
     }
     
-    try {
-      console.log(`Generation: Sending reference strength: ${referenceStrength}`);
-      
-      const startResponse = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          modelFileName,
-          modelId,
-          referenceImageUrl,
-          referenceImageName,
-          mainPrompt,
-          selectedStyle,
-          seed,
-          highQuality: actualQuality,
-          referenceStrength,
-        }),
-      });
-
-      const startResult = await startResponse.json();
-      if (!startResult.success) {
-        throw new Error(startResult.error || 'Failed to start generation.');
-      }
-      const { generationId } = startResult;
-
-      setCurrentGenerationId(generationId);
-      
-      if (useProgressiveMode) {
-        console.log(`Generation: Started progressive generation ${generationId} - fast preview first`);
-      } else {
-        console.log(`Generation: Started generation ${generationId} - ${actualQuality ? 'quality' : 'fast'} mode`);
-      }
-
-    } catch (error: unknown) {
-      console.error("Error starting generation:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to generate textures.");
-      setIsLoading(false);
+    // Auto-start processing if this is the first continuous item in queue
+    // Check continuous queue count after adding this item
+    const currentQueue = useAppStore.getState().generationQueue;
+    const continuousItems = currentQueue.filter(item => item.queueType === 'continuous');
+    if (continuousItems.length === 1 && !isLoading) {
+      console.log('Auto-starting continuous queue processing...');
+      setTimeout(() => {
+        handleStartContinuousQueue();
+      }, 500); // Small delay to ensure UI updates
     }
+  };
+
+  // Continuous queue processing (different from batch processing)
+  const handleStartContinuousQueue = async () => {
+    const processNextItem = async () => {
+      const currentQueue = useAppStore.getState().generationQueue;
+      const continuousItems = currentQueue.filter(item => item.queueType === 'continuous');
+      
+      if (continuousItems.length === 0) {
+        setIsLoading(false);
+        setCurrentGenerationId(null);
+        console.log('Continuous queue completed - no more continuous items');
+        return;
+      }
+      
+      const item = continuousItems[0]; // Always process first continuous item
+      
+      try {
+        console.log(`Continuous Queue: Processing item`, item);
+        const displayName = item.mainPrompt ? 
+          (item.mainPrompt.split(' ')?.slice(0, 2)?.join(' ') || 'Generation')
+          : item.subject_prompt || 'Generation';
+          
+        console.log(`Generation: Sending reference strength: ${item.referenceStrength}`);
+        console.log(`Generation: Using model preset: ${activeModelPresetId}`);
+        
+        // Get the actual active preset data
+        const activePreset = modelPresets.find(p => p.isActive);
+        console.log(`Generation: Active preset data:`, activePreset);
+        
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            modelFileName: item.modelFileName,
+            modelId: item.modelId,
+            referenceImageUrl: item.referenceImageUrl,
+            referenceImageName: item.referenceImageName,
+            mainPrompt: item.mainPrompt,
+            selectedStyle: item.selectedStyle,
+            seed: item.seed,
+            highQuality: item.highQuality,
+            referenceStrength: item.referenceStrength,
+            modelPresetId: activeModelPresetId,
+            modelPresetData: activePreset,
+            viewAngle: item.viewAngle || viewAngle,
+          }),
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          const generationId = result.generationId;
+          setCurrentGenerationId(generationId);
+          
+          console.log(`Continuous Queue: Started generation ${generationId} for "${displayName}"`);
+          
+          // Remove the processed item from queue
+          removeFromQueue(item.id);
+          
+          // Wait for this generation to complete before starting next
+          const waitForCompletion = async () => {
+            return new Promise<void>((resolve) => {
+              const pollInterval = setInterval(async () => {
+                try {
+                  const { data: generation, error: queryError } = await supabase
+                    .from('generations')
+                    .select('status')
+                    .eq('id', generationId)
+                    .single() as { data: { status: string } | null, error: any };
+                  
+                  // If generation was deleted (404/406 error), stop polling
+                  if (queryError && (queryError.code === 'PGRST116' || queryError.message?.includes('406'))) {
+                    clearInterval(pollInterval);
+                    console.log(`Continuous Queue: Generation ${generationId} was deleted, stopping polling`);
+                    resolve();
+                    return;
+                  }
+                  
+                  if (generation && (generation.status === 'completed' || generation.status === 'failed')) {
+                    clearInterval(pollInterval);
+                    console.log(`Continuous Queue: Generation ${generationId} ${generation.status}`);
+                    
+                    // If completed, update the 3D viewer with new textures
+                    if (generation.status === 'completed') {
+                      const { data: fullGeneration } = await supabase
+                        .from('generations')
+                        .select('*')
+                        .eq('id', generationId)
+                        .single() as { data: GenerationRecord | null };
+                      
+                      if (fullGeneration) {
+                        const textureData = {
+                          diffuse: fullGeneration.diffuse_storage_path || null,
+                          normal: fullGeneration.normal_storage_path || null,
+                          height: fullGeneration.height_storage_path || null,
+                          thumbnail: fullGeneration.thumbnail_storage_path || null,
+                          depth_preview: fullGeneration.depth_preview_storage_path || null,
+                          front_preview: fullGeneration.front_preview_storage_path || null
+                        };
+                        
+                        console.log(`Continuous Queue: Applying textures for ${generationId}`, textureData);
+                        setGeneratedTextures(textureData);
+                        
+                        // Create generation pair for upgrade functionality
+                        const generationPair = {
+                          id: fullGeneration.id,
+                          fastGeneration: fullGeneration.high_quality ? currentGeneration?.fastGeneration : fullGeneration,
+                          hqGeneration: fullGeneration.high_quality ? fullGeneration : undefined,
+                          canUpgrade: !fullGeneration.high_quality,
+                          isUpgrading: false,
+                          currentTextures: textureData
+                        };
+                        
+                        setCurrentGeneration(generationPair);
+                        
+                        if (!fullGeneration.high_quality) {
+                          toast.success("🎉 Fast textures ready! Click 'Upgrade' for maximum quality.");
+                        } else {
+                          toast.success("🎉 High Quality textures generated successfully!");
+                        }
+                      }
+                    }
+                    
+                    resolve();
+                  }
+                } catch (error) {
+                  console.error('Continuous queue polling error:', error);
+                }
+              }, 10000); // Check every 10 seconds
+              
+              // Timeout after 20 minutes
+              setTimeout(() => {
+                clearInterval(pollInterval);
+                console.log(`Continuous Queue: Generation ${generationId} timeout`);
+                resolve();
+              }, 20 * 60 * 1000);
+            });
+          };
+          
+          await waitForCompletion();
+          
+          // Refresh gallery to show completed generation
+          const { data: updatedGenerations } = await supabase
+            .from('generations')
+            .select('*, model:models(*)')
+            .order('created_at', { ascending: false }) as { data: GenerationRecord[] | null };
+          
+          if (updatedGenerations) {
+            setGenerations(updatedGenerations);
+          }
+          
+          // Check if there are more continuous items before continuing
+          const updatedQueue = useAppStore.getState().generationQueue;
+          const remainingContinuousItems = updatedQueue.filter(item => item.queueType === 'continuous');
+          if (remainingContinuousItems.length > 0) {
+            setTimeout(processNextItem, 1000); // 1 second delay between items
+          } else {
+            console.log('Continuous queue completed - setting isLoading to false');
+            setIsLoading(false);
+            setCurrentGenerationId(null);
+            console.log('Continuous queue completed - all continuous items processed');
+          }
+          
+        } else {
+          console.error(`Continuous Queue: Failed to start generation for "${displayName}"`);
+          removeFromQueue(item.id);
+          // Check if there are more continuous items before continuing
+          const updatedQueue = useAppStore.getState().generationQueue;
+          const remainingContinuousItems = updatedQueue.filter(item => item.queueType === 'continuous');
+          if (remainingContinuousItems.length > 0) {
+            setTimeout(processNextItem, 1000);
+          } else {
+            console.log('Continuous queue completed after error - setting isLoading to false');
+            setIsLoading(false);
+            setCurrentGenerationId(null);
+            console.log('Continuous queue completed after error');
+          }
+        }
+        
+      } catch (error: any) {
+        console.error('Continuous queue processing error:', error);
+        removeFromQueue(item.id);
+        // Check if there are more continuous items before continuing
+        const updatedQueue = useAppStore.getState().generationQueue;
+        const remainingContinuousItems = updatedQueue.filter(item => item.queueType === 'continuous');
+        if (remainingContinuousItems.length > 0) {
+          setTimeout(processNextItem, 1000);
+        } else {
+          console.log('Continuous queue completed after exception - setting isLoading to false');
+          setIsLoading(false);
+          setCurrentGenerationId(null);
+          console.log('Continuous queue completed after exception');
+        }
+      }
+    };
+    
+    // Start processing the first item
+    processNextItem();
   };
 
   // Resize handlers
@@ -348,10 +591,14 @@ export default function BottomControlBar() {
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className={`relative rounded-2xl border shadow-lg ${
-            theme === 'dark' 
-              ? 'bg-gray-800/95 border-gray-700' 
-              : 'bg-white/95 border-gray-200'
+          className={`relative rounded-2xl border shadow-lg overflow-hidden transition-all duration-300 ${
+            modelUrl
+              ? theme === 'dark' 
+                ? 'bg-green-900/20 border-green-700/50' 
+                : 'bg-green-50/80 border-green-200'
+              : theme === 'dark' 
+                ? 'bg-gray-900/95 border-gray-700' 
+                : 'bg-white/95 border-gray-200'
           }`}
         >
           <input
@@ -362,16 +609,18 @@ export default function BottomControlBar() {
             disabled={false}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
           />
+          
+
           <motion.div
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="w-16 h-16 flex items-center justify-center"
+            className="w-16 h-16 flex items-center justify-center relative"
           >
-            {modelUrl ? (
-              <div className="text-emerald-600 font-bold text-sm">3D</div>
-            ) : (
-              <Box className={`h-6 w-6 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
-            )}
+            <Box className={`h-6 w-6 transition-colors duration-300 ${
+              modelUrl 
+                ? 'text-green-500' 
+                : theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+            }`} />
           </motion.div>
         </motion.div>
 
@@ -382,7 +631,7 @@ export default function BottomControlBar() {
           transition={{ duration: 0.3, ease: "easeOut", delay: 0.1 }}
           className={`relative rounded-2xl border shadow-lg ${
             theme === 'dark' 
-              ? 'bg-gray-800/95 border-gray-700' 
+              ? 'bg-gray-900/95 border-gray-700' 
               : 'bg-white/95 border-gray-200'
           }`}
         >
@@ -426,7 +675,7 @@ export default function BottomControlBar() {
           onClick={toggleBottomBar}
           className={`absolute -top-2 -right-2 z-10 p-1.5 rounded-full transition-all duration-150 ease-out shadow-lg border ${
             theme === 'dark' 
-              ? 'bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-300 border-gray-700' 
+              ? 'bg-gray-900 hover:bg-gray-800 text-gray-400 hover:text-gray-300 border-gray-700' 
               : 'bg-white hover:bg-gray-50 text-gray-500 hover:text-gray-700 border-gray-200'
           }`}
         >
@@ -502,6 +751,26 @@ export default function BottomControlBar() {
                 }`}
                 placeholder="Seed"
               />
+
+              {/* View Angle Selection */}
+              <select
+                value={viewAngle}
+                onChange={(e) => setViewAngle(parseInt(e.target.value, 10))}
+                disabled={false}
+                className={`w-20 text-xs text-center border-0 bg-transparent focus:outline-none cursor-pointer ${
+                  theme === 'dark'
+                    ? 'text-gray-300'
+                    : 'text-gray-700'
+                }`}
+                title="Select view angle for depth map generation. For T-pose models: V1=Front, V3=Back, V2/V4=Sides"
+              >
+                <option value={1}>V1 Front</option>
+                <option value={2}>V2 Side</option>
+                <option value={3}>V3 Back</option>
+                <option value={4}>V4 Side</option>
+                <option value={5}>V5 Top</option>
+                <option value={6}>V6 Bottom</option>
+              </select>
             </div>
 
             {/* Right: Minimalist Actions */}
@@ -538,14 +807,16 @@ export default function BottomControlBar() {
                       seed,
                       referenceStrength,
                       highQuality: false,
-                      status: 'queued'
+                      status: 'queued',
+                      viewAngle,
+                      userId: userEmail || undefined
                     };
-                    addToQueue(queueItem);
-                    toast.success("Added to generation queue");
+                    addToBatchQueue(queueItem);
+                    toast.success("Added to batch queue - use admin panel to start");
                   }}
                   className={`p-2 rounded-lg transition-all duration-200 ease-out ${
                     theme === 'dark'
-                      ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-300'
+                      ? 'hover:bg-gray-900 text-gray-400 hover:text-gray-300'
                       : 'hover:bg-gray-100 text-gray-600 hover:text-gray-700'
                   }`}
                   title="Queue for Later"
@@ -554,62 +825,25 @@ export default function BottomControlBar() {
                 </motion.button>
               )}
 
-              {/* Generate/Stop Button */}
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  {/* Processing Indicator */}
-                  <motion.div
-                    className={`p-3 rounded-xl ${
-                      theme === 'dark' ? 'bg-gray-700' : 'bg-gray-300'
-                    }`}
-                  >
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      className="w-5 h-5 border-2 border-current border-t-transparent rounded-full"
-                    />
-                  </motion.div>
-                  
-                  {/* Stop Processing Button */}
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      setIsLoading(false);
-                      setCurrentGenerationId(null);
-                      toast.info("Processing stopped - you can start a new generation");
-                    }}
-                    className={`px-4 py-2 rounded-lg border transition-all duration-200 ease-out ${
-                      theme === 'dark'
-                        ? 'bg-red-600 hover:bg-red-700 text-white border-red-500'
-                        : 'bg-red-500 hover:bg-red-600 text-white border-red-400'
-                    }`}
-                    title="Stop current processing and reset"
-                  >
-                    Stop
-                  </motion.button>
-                </div>
-              ) : (
-                /* Generate Button - Icon Only */
-                <motion.button
-                  whileHover={{ scale: 1.05, y: -1 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleGenerate}
-                  disabled={!modelUrl || !referenceImageUrl}
-                  className={`
-                    relative p-3 rounded-xl transition-all duration-200
-                    ${!modelUrl || !referenceImageUrl
-                      ? theme === 'dark' 
-                        ? 'bg-gray-700 cursor-not-allowed text-gray-500' 
-                        : 'bg-gray-300 cursor-not-allowed text-gray-500'
-                      : 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl'
-                    }
-                  `}
-                  title="Generate Textures"
-                >
-                  <Sparkles className="h-5 w-5" />
-                </motion.button>
-              )}
+              {/* Generate Button - Always Available */}
+              <motion.button
+                whileHover={{ scale: 1.05, y: -1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleGenerate}
+                disabled={!modelUrl || !referenceImageUrl}
+                className={`
+                  relative p-3 rounded-xl transition-all duration-200
+                  ${!modelUrl || !referenceImageUrl
+                    ? theme === 'dark' 
+                      ? 'bg-gray-700 cursor-not-allowed text-gray-500' 
+                      : 'bg-gray-300 cursor-not-allowed text-gray-500'
+                    : 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl'
+                  }
+                `}
+                title="Generate Textures"
+              >
+                <Sparkles className="h-5 w-5" />
+              </motion.button>
             </div>
           </div>
         </div>

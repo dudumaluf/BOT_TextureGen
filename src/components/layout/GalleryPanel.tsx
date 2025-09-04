@@ -295,7 +295,7 @@ export default function GalleryPanel() {
                     isSelected 
                       ? 'bg-blue-50 border-blue-500 shadow-md' 
                       : theme === 'dark'
-                        ? 'bg-gray-800 border-gray-700 hover:border-blue-400'
+                        ? 'bg-gray-900 border-gray-700 hover:border-blue-400'
                         : 'bg-white border-gray-200 hover:border-blue-300'
                   }`}
                   onClick={() => {
@@ -308,9 +308,9 @@ export default function GalleryPanel() {
                 >
                 {/* Thumbnail */}
                 <div className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100 mb-3">
-                  {gen.thumbnail_storage_path ? (
+                  {(gen.front_preview_storage_path || gen.thumbnail_storage_path) ? (
                     <img 
-                      src={gen.thumbnail_storage_path} 
+                      src={gen.front_preview_storage_path || gen.thumbnail_storage_path} 
                       alt="Generation thumbnail" 
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
                     />
@@ -324,20 +324,20 @@ export default function GalleryPanel() {
                 </div>
                 
                 {/* Info */}
-                <div className="space-y-2">
-                  <p className={`text-sm font-medium truncate ${theme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`} title={gen.subject_prompt || ''}>
+                <div className="space-y-2 min-w-0">
+                  <p className={`text-sm font-medium truncate overflow-hidden ${theme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`} title={gen.subject_prompt || ''}>
                     {gen.subject_prompt || 'Untitled Generation'}
                   </p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${
+                  <div className="flex items-center justify-between min-w-0">
+                    <div className="flex items-center gap-2 min-w-0 flex-shrink">
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
                         gen.status === 'completed' ? 'bg-green-500' :
                         gen.status === 'processing' ? 'bg-yellow-500' :
                         'bg-red-500'
                       }`} />
-                      <p className="text-xs text-gray-500 capitalize">{gen.status}</p>
+                      <p className="text-xs text-gray-500 capitalize truncate">{gen.status}</p>
                     </div>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-gray-400 flex-shrink-0 ml-2">
                       {gen.created_at ? new Date(gen.created_at).toLocaleDateString() : ''}
                     </p>
                   </div>

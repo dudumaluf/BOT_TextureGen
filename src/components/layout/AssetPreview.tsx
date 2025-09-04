@@ -6,6 +6,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Download } from "lucide-react";
 import { toast } from "sonner";
+import PreviewThumbnail from "@/components/ui/preview-thumbnail";
+import ImagePreviewModal from "./ImagePreviewModal";
 
 interface AssetPreviewProps {
   isOpen?: boolean;
@@ -14,6 +16,20 @@ interface AssetPreviewProps {
 
 export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewProps) {
   const { referenceImageUrl, generatedTextures, theme } = useAppStore();
+  const [previewModal, setPreviewModal] = useState<{ isOpen: boolean; imageUrl: string; title: string; alt: string }>({
+    isOpen: false,
+    imageUrl: '',
+    title: '',
+    alt: ''
+  });
+
+  const openPreview = (imageUrl: string, title: string, alt: string) => {
+    setPreviewModal({ isOpen: true, imageUrl, title, alt });
+  };
+
+  const closePreview = () => {
+    setPreviewModal({ isOpen: false, imageUrl: '', title: '', alt: '' });
+  };
 
   const handleDownload = async (url: string, filename: string) => {
     try {
@@ -33,7 +49,7 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
     }
   };
 
-  const hasContent = referenceImageUrl || generatedTextures.diffuse || generatedTextures.thumbnail;
+  const hasContent = referenceImageUrl || generatedTextures.diffuse || generatedTextures.thumbnail || generatedTextures.depth_preview || generatedTextures.front_preview;
 
   if (!hasContent) {
     return null;
@@ -54,7 +70,7 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
             onClick={onClose}
             className={`absolute -top-1 -right-1 p-1 rounded-full transition-colors z-10 shadow-sm border ${
               theme === 'dark'
-                ? 'bg-gray-800 hover:bg-gray-700 border-gray-700 text-gray-400'
+                ? 'bg-gray-900 hover:bg-gray-800 border-gray-700 text-gray-400'
                 : 'bg-white/90 hover:bg-gray-100 border-gray-200 text-gray-400'
             }`}
           >
@@ -71,16 +87,44 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
               >
                 <div className="text-center">
                   <p className="text-xs font-medium mb-1 text-gray-600">Ref</p>
-                  <div className="relative overflow-hidden rounded">
+                  <div className="relative w-[60px] h-[60px] overflow-hidden rounded">
                     <Image 
                       src={referenceImageUrl} 
                       alt="Reference" 
                       width={60} 
                       height={60} 
-                      className="rounded transition-transform duration-300 hover:scale-110" 
+                      className="rounded transition-transform duration-300 hover:scale-110 object-cover w-full h-full" 
                     />
                   </div>
                 </div>
+              </motion.div>
+            )}
+            {generatedTextures.depth_preview && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.15 }}
+              >
+                <PreviewThumbnail
+                  src={generatedTextures.depth_preview}
+                  alt="Depth Preview"
+                  title="Depth"
+                  onPreview={() => openPreview(generatedTextures.depth_preview!, "Depth Map", "Depth Preview")}
+                />
+              </motion.div>
+            )}
+            {generatedTextures.front_preview && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.17 }}
+              >
+                <PreviewThumbnail
+                  src={generatedTextures.front_preview}
+                  alt="Front Preview"
+                  title="Preview"
+                  onPreview={() => openPreview(generatedTextures.front_preview!, "View Preview", "Front Preview")}
+                />
               </motion.div>
             )}
             {generatedTextures.thumbnail && (
@@ -88,20 +132,13 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-center"
               >
-                <div className="text-center">
-                  <p className="text-xs font-medium mb-1 text-gray-600">View</p>
-                  <div className="relative overflow-hidden rounded">
-                    <img 
-                      src={generatedTextures.thumbnail} 
-                      alt="Front View" 
-                      width={60} 
-                      height={60} 
-                      className="rounded transition-transform duration-300 hover:scale-110" 
-                    />
-                  </div>
-                </div>
+                <PreviewThumbnail
+                  src={generatedTextures.thumbnail}
+                  alt="Multiview Preview"
+                  title="Multiview"
+                  onPreview={() => openPreview(generatedTextures.thumbnail!, "Multiview Preview", "Multiview Preview")}
+                />
               </motion.div>
             )}
             {generatedTextures.diffuse && (
@@ -109,28 +146,13 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 }}
-                className="text-center"
               >
-                <div className="text-center relative group">
-                  <p className="text-xs font-medium mb-1 text-gray-600">Diffuse</p>
-                  <div className="relative overflow-hidden rounded">
-                    <img 
-                      src={generatedTextures.diffuse} 
-                      alt="Diffuse" 
-                      width={60} 
-                      height={60} 
-                      className="rounded transition-transform duration-300 hover:scale-110" 
-                    />
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => handleDownload(generatedTextures.diffuse!, 'diffuse_texture.png')}
-                      className="absolute inset-0 bg-black/50 text-white rounded opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center"
-                    >
-                      <Download className="h-4 w-4" />
-                    </motion.button>
-                  </div>
-                </div>
+                <PreviewThumbnail
+                  src={generatedTextures.diffuse}
+                  alt="Diffuse Texture"
+                  title="Diffuse"
+                  onPreview={() => openPreview(generatedTextures.diffuse!, "Diffuse Texture", "Diffuse Texture")}
+                />
               </motion.div>
             )}
             {generatedTextures.normal && (
@@ -138,28 +160,13 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 }}
-                className="text-center"
               >
-                <div className="text-center relative group">
-                  <p className="text-xs font-medium mb-1 text-gray-600">Normal</p>
-                  <div className="relative overflow-hidden rounded">
-                    <img 
-                      src={generatedTextures.normal} 
-                      alt="Normal" 
-                      width={60} 
-                      height={60} 
-                      className="rounded transition-transform duration-300 hover:scale-110" 
-                    />
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => handleDownload(generatedTextures.normal!, 'normal_texture.png')}
-                      className="absolute inset-0 bg-black/50 text-white rounded opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center"
-                    >
-                      <Download className="h-4 w-4" />
-                    </motion.button>
-                  </div>
-                </div>
+                <PreviewThumbnail
+                  src={generatedTextures.normal}
+                  alt="Normal Texture"
+                  title="Normal"
+                  onPreview={() => openPreview(generatedTextures.normal!, "Normal Map", "Normal Texture")}
+                />
               </motion.div>
             )}
             {generatedTextures.height && (
@@ -167,32 +174,26 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.5 }}
-                className="text-center"
               >
-                <div className="text-center relative group">
-                  <p className="text-xs font-medium mb-1 text-gray-600">Height</p>
-                  <div className="relative overflow-hidden rounded">
-                    <img 
-                      src={generatedTextures.height} 
-                      alt="Height" 
-                      width={60} 
-                      height={60} 
-                      className="rounded transition-transform duration-300 hover:scale-110" 
-                    />
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => handleDownload(generatedTextures.height!, 'height_texture.png')}
-                      className="absolute inset-0 bg-black/50 text-white rounded opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center"
-                    >
-                      <Download className="h-4 w-4" />
-                    </motion.button>
-                  </div>
-                </div>
+                <PreviewThumbnail
+                  src={generatedTextures.height}
+                  alt="Height Texture"
+                  title="Height"
+                  onPreview={() => openPreview(generatedTextures.height!, "Height Map", "Height Texture")}
+                />
               </motion.div>
             )}
         </div>
       </div>
+
+      {/* Preview Modal - Rendered via Portal at document root */}
+      <ImagePreviewModal
+        isOpen={previewModal.isOpen}
+        onClose={closePreview}
+        imageUrl={previewModal.imageUrl}
+        title={previewModal.title}
+        alt={previewModal.alt}
+      />
     </div>
   );
 }

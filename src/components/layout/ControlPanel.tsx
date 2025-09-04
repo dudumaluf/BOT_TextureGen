@@ -67,6 +67,15 @@ export default function ControlPanel() {
             .eq('id', currentGenerationId)
             .single() as { data: GenerationRecord | null, error: any };
           
+          // If generation was deleted, stop polling
+          if (error && (error.code === 'PGRST116' || error.message?.includes('406'))) {
+            console.log(`Polling: Generation ${currentGenerationId} was deleted, stopping polling`);
+            setIsLoading(false);
+            setCurrentGenerationId(null);
+            clearInterval(pollInterval);
+            return;
+          }
+          
           if (!error && generation && generation.status === 'completed') {
             console.log(`Polling: Current generation ${currentGenerationId} completed!`);
             
@@ -74,7 +83,9 @@ export default function ControlPanel() {
               diffuse: generation.diffuse_storage_path || null,
               normal: generation.normal_storage_path || null,
               height: generation.height_storage_path || null,
-              thumbnail: generation.thumbnail_storage_path || null
+              thumbnail: generation.thumbnail_storage_path || null,
+              depth_preview: generation.depth_preview_storage_path || null,
+              front_preview: generation.front_preview_storage_path || null
             };
             
             setGeneratedTextures(textureData);
@@ -422,7 +433,9 @@ export default function ControlPanel() {
             diffuse: latest.diffuse_storage_path || null,
             normal: latest.normal_storage_path || null,
             height: latest.height_storage_path || null,
-            thumbnail: latest.thumbnail_storage_path || null
+            thumbnail: latest.thumbnail_storage_path || null,
+            depth_preview: latest.depth_preview_storage_path || null,
+            front_preview: latest.front_preview_storage_path || null
           };
           
           console.log("Setting textures:", textureData);

@@ -8,11 +8,12 @@ import AssetPreview from "./AssetPreview";
 import BottomControlBar from "./BottomControlBar";
 import Viewer from "@/components/3d/Viewer";
 import LoadingOverlay from "./LoadingOverlay";
-import { Library, Layers, Eye, EyeOff, Settings, Sliders, MessageSquare, Edit3 } from "lucide-react";
+import { Library, Layers, Eye, EyeOff, Settings, Sliders, MessageSquare, Edit3, Play } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import SettingsModal from "./SettingsPanel";
 import ScenePanel from "./ScenePanel";
+import AnimationTimeline from "./AnimationTimeline";
 
 export default function BentoLayout() {
   const { 
@@ -23,9 +24,12 @@ export default function BentoLayout() {
     referenceImageUrl,
     isBottomBarOpen,
     theme,
+    hasAnimations,
+    showAnimationTimeline,
     toggleGallery,
     toggleBottomBar,
-    toggleSettings
+    toggleSettings,
+    setShowAnimationTimeline
   } = useAppStore();
   
   const [isQueueOpen, setIsQueueOpen] = useState(false);
@@ -34,13 +38,13 @@ export default function BentoLayout() {
 
   const hasGenerations = generations && generations.length > 0;
   const hasQueue = queueCount > 0;
-  const hasContent = generatedTextures.diffuse || referenceImageUrl;
+  const hasContent = generatedTextures.diffuse || generatedTextures.depth_preview || generatedTextures.front_preview || referenceImageUrl;
 
   // Common button styling based on theme
   const getButtonStyle = (hoverColor: string) => 
     `p-3 backdrop-blur-md rounded-full shadow-lg border transition-all duration-200 ease-out pointer-events-auto ${
       theme === 'dark'
-        ? `bg-gray-800/90 border-gray-700 text-gray-300 hover:${hoverColor}`
+        ? `bg-gray-900/90 border-gray-700 text-gray-300 hover:${hoverColor}`
         : `bg-white/90 border-white/20 text-gray-600 hover:${hoverColor}`
     }`;
 
@@ -59,7 +63,7 @@ export default function BentoLayout() {
       {/* Full-Screen 3D Viewer - Never Resizes */}
       <div className="absolute inset-0">
         <Viewer />
-        <LoadingOverlay />
+        <LoadingOverlay isQueueOpen={showQueuePanel} />
       </div>
 
       {/* Left Panel - Gallery or Scene (Overlay) */}
@@ -72,7 +76,7 @@ export default function BentoLayout() {
             transition={{ duration: 0.25, ease: "easeOut" }}
             className={`absolute top-0 left-0 bottom-0 w-72 z-20 pointer-events-auto ${
               theme === 'dark' 
-                ? 'bg-gray-800 border-r border-gray-700' 
+                ? 'bg-gray-900/95 border-r border-gray-700' 
                 : 'bg-white border-r border-gray-200'
             }`}
             style={{ pointerEvents: 'auto' }}
@@ -95,7 +99,7 @@ export default function BentoLayout() {
             transition={{ duration: 0.25, ease: "easeOut" }}
             className={`absolute top-0 right-0 bottom-0 w-72 z-20 pointer-events-auto ${
               theme === 'dark' 
-                ? 'bg-gray-800 border-l border-gray-700' 
+                ? 'bg-gray-900/95 border-l border-gray-700' 
                 : 'bg-white border-l border-gray-200'
             }`}
             style={{ pointerEvents: 'auto' }}
@@ -107,12 +111,21 @@ export default function BentoLayout() {
 
       {/* 3D Viewer Overlay Content - Only interactive elements */}
       <div className="absolute inset-0 z-10 pointer-events-none">
-                  {/* Asset Preview - Top Center */}
+                  {/* Asset Preview - Dynamically Centered */}
           {hasContent && isPreviewOpen && (
-            <div className="absolute top-6 left-1/2 transform -translate-x-1/2 pointer-events-auto">
+            <div 
+              className="absolute top-6 pointer-events-auto transition-all duration-300 ease-out"
+              style={{
+                left: (isGalleryOpen || isSceneOpen) ? '288px' : '0px', // Account for left panel
+                right: showQueuePanel ? '320px' : '0px', // Account for right panel
+                display: 'flex',
+                justifyContent: 'center'
+              }}
+            >
               <AssetPreview isOpen={true} onClose={() => setIsPreviewOpen(false)} />
             </div>
           )}
+
 
         {/* Always-Visible Toggle Buttons */}
         
@@ -121,6 +134,15 @@ export default function BentoLayout() {
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           className="absolute top-1 left-1 pointer-events-auto z-40"
+          onClick={() => {
+            // Quick test: Load sample animated GLB
+            const { setModelUrl, setModelId, setModelFileName } = useAppStore.getState();
+            setModelUrl('/Elo_Animations.glb');
+            setModelId('sample-animated-model');
+            setModelFileName('Elo_Animations.glb');
+          }}
+          style={{ cursor: 'pointer' }}
+          title="Click to load sample animated model"
         >
           <Image
             src={theme === 'light' ? '/logo_texturegen_black_on_transparent.png' : '/logo_texturegen_white_on_transparent_.png'}
@@ -145,7 +167,7 @@ export default function BentoLayout() {
               // Close gallery if open
               if (isGalleryOpen) toggleGallery();
             }}
-            className={`absolute bottom-4 left-4 z-40 ${getButtonStyle('text-green-600')}`}
+            className={`absolute bottom-4 left-4 z-50 ${getButtonStyle('text-green-600')}`}
             title="Scene Settings"
           >
             <Sliders className="h-5 w-5" />
@@ -164,7 +186,7 @@ export default function BentoLayout() {
               // Close scene panel if open
               if (isSceneOpen) setIsSceneOpen(false);
             }}
-            className={`absolute top-1/2 left-4 transform -translate-y-1/2 z-40 ${getButtonStyle('text-blue-600')}`}
+            className={`absolute top-1/2 left-4 transform -translate-y-1/2 z-50 ${getButtonStyle('text-blue-600')}`}
             title="Open Gallery"
           >
             <Library className="h-5 w-5" />
@@ -208,8 +230,9 @@ export default function BentoLayout() {
           <Settings className="h-5 w-5" />
         </motion.button>
 
+
         {/* Texture Preview Toggle - Top Center (only when closed) */}
-        {hasContent && !isPreviewOpen && (
+        {hasContent && !isPreviewOpen && !hasAnimations && (
           <motion.button
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -244,20 +267,33 @@ export default function BentoLayout() {
         )}
       </AnimatePresence>
 
-      {/* Bottom Bar Toggle - When closed */}
+      {/* Bottom Controls Toggle - When closed */}
       {!isBottomBarOpen && (
-        <motion.button
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={toggleBottomBar}
-          className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 z-40 ${getButtonStyle('text-blue-600')}`}
-          title="Open Controls"
+        <div 
+          className="absolute bottom-4 z-40 transition-all duration-300 ease-out pointer-events-none"
+          style={{
+            left: (isGalleryOpen || isSceneOpen) ? '288px' : '0px', // Account for left panel
+            right: showQueuePanel ? '320px' : '0px', // Account for right panel
+            display: 'flex',
+            justifyContent: 'center'
+          }}
         >
-          <Edit3 className="h-5 w-5" />
-        </motion.button>
+          <motion.button
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={toggleBottomBar}
+            className={`pointer-events-auto ${getButtonStyle('text-blue-600')}`}
+            title="Open Controls"
+          >
+            <Edit3 className="h-5 w-5" />
+          </motion.button>
+        </div>
       )}
+
+      {/* Animation Timeline - Global overlay */}
+      <AnimationTimeline isQueueOpen={isQueueOpen} isSceneOpen={isSceneOpen} />
 
       {/* Settings Modal - Global overlay */}
       <SettingsModal />

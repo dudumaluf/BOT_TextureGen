@@ -3,11 +3,12 @@
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, Environment } from "@react-three/drei";
 import Model from "./Model";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { useAppStore } from "@/store/appStore";
 
 function CameraController() {
   const cameraDistance = useAppStore((state) => state.cameraDistance);
+  const resetCameraTrigger = useAppStore((state) => state.resetCameraTrigger);
   const { camera } = useThree();
 
   useEffect(() => {
@@ -16,7 +17,36 @@ function CameraController() {
     camera.updateProjectionMatrix();
   }, [camera, cameraDistance]);
 
+  // Handle camera reset
+  useEffect(() => {
+    if (resetCameraTrigger > 0) {
+      console.log('Reset camera trigger activated:', resetCameraTrigger);
+      
+      // Reset camera position
+      camera.position.set(0, 0, cameraDistance);
+      camera.lookAt(0, 0, 0);
+      camera.updateProjectionMatrix();
+      
+      console.log('Camera reset completed');
+    }
+  }, [resetCameraTrigger, camera, cameraDistance]);
+
   return null;
+}
+
+function OrbitControlsWrapper() {
+  const resetCameraTrigger = useAppStore((state) => state.resetCameraTrigger);
+  const controlsRef = useRef<any>();
+
+  useEffect(() => {
+    if (resetCameraTrigger > 0 && controlsRef.current) {
+      console.log('Resetting OrbitControls via ref');
+      controlsRef.current.target.set(0, 0, 0);
+      controlsRef.current.update();
+    }
+  }, [resetCameraTrigger]);
+
+  return <OrbitControls ref={controlsRef} target={[0, 0, 0]} />;
 }
 
 export default function Viewer() {
@@ -40,7 +70,7 @@ export default function Viewer() {
             <color attach="background" args={[backgroundColor]} />
           )}
         </Suspense>
-        <OrbitControls target={[0, 0, 0]} />
+        <OrbitControlsWrapper />
       </Canvas>
     </div>
   );

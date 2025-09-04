@@ -27,6 +27,8 @@ class WebhookNode:
                 "normal": ("IMAGE",),
                 "height": ("IMAGE",),
                 "thumbnail": ("IMAGE",),
+                "depth_preview": ("IMAGE",),
+                "front_preview": ("IMAGE",),
             }
         }
 

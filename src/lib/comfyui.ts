@@ -78,3 +78,138 @@ export async function startTextureGeneration(workflow: any): Promise<{ success: 
   console.warn('startTextureGeneration is deprecated, use queueTextureGeneration instead');
   return queueTextureGeneration(workflow);
 }
+
+// ComfyUI Queue Management Functions
+export interface ComfyUIQueueItem {
+  prompt_id: string;
+  number: number;
+  prompt: any;
+  extra_data: any;
+  outputs_to_execute: string[];
+}
+
+export interface ComfyUIQueueStatus {
+  exec_info: {
+    queue_remaining: number;
+  };
+  queue_running: ComfyUIQueueItem[];
+  queue_pending: ComfyUIQueueItem[];
+}
+
+export async function getComfyUIQueue(): Promise<ComfyUIQueueStatus> {
+  if (!API_URL) {
+    throw new Error("COMFYUI_API_URL environment variable is not set");
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/queue`);
+    if (!response.ok) {
+      throw new Error(`Failed to get queue: ${response.statusText}`);
+    }
+    return response.json();
+  } catch (error: any) {
+    console.error('ComfyUI: Error getting queue', error);
+    throw error;
+  }
+}
+
+export async function clearComfyUIQueue(): Promise<{ success: boolean }> {
+  if (!API_URL) {
+    throw new Error("COMFYUI_API_URL environment variable is not set");
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/queue`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clear: true }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to clear queue: ${response.statusText}`);
+    }
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error('ComfyUI: Error clearing queue', error);
+    throw error;
+  }
+}
+
+export async function deleteQueueItem(promptId: string): Promise<{ success: boolean }> {
+  if (!API_URL) {
+    throw new Error("COMFYUI_API_URL environment variable is not set");
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/queue`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ delete: [promptId] }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to delete queue item: ${response.statusText}`);
+    }
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error('ComfyUI: Error deleting queue item', error);
+    throw error;
+  }
+}
+
+export async function interruptComfyUI(): Promise<{ success: boolean }> {
+  if (!API_URL) {
+    throw new Error("COMFYUI_API_URL environment variable is not set");
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/interrupt`, {
+      method: 'POST',
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to interrupt ComfyUI: ${response.statusText}`);
+    }
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error('ComfyUI: Error interrupting', error);
+    throw error;
+  }
+}
+
+export async function getComfyUISystemStats(): Promise<any> {
+  if (!API_URL) {
+    throw new Error("COMFYUI_API_URL environment variable is not set");
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/system_stats`);
+    if (!response.ok) {
+      throw new Error(`Failed to get system stats: ${response.statusText}`);
+    }
+    return response.json();
+  } catch (error: any) {
+    console.error('ComfyUI: Error getting system stats', error);
+    throw error;
+  }
+}
+
+export async function getComfyUIHistory(maxItems: number = 50): Promise<any> {
+  if (!API_URL) {
+    throw new Error("COMFYUI_API_URL environment variable is not set");
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/history/${maxItems}`);
+    if (!response.ok) {
+      throw new Error(`Failed to get history: ${response.statusText}`);
+    }
+    return response.json();
+  } catch (error: any) {
+    console.error('ComfyUI: Error getting history', error);
+    throw error;
+  }
+}

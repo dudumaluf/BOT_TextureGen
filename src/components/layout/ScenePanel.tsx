@@ -26,6 +26,7 @@ export default function ScenePanel({ isOpen, onClose }: ScenePanelProps) {
     setObjectScale,
     setAsDefaults,
     resetToDefaults,
+    resetCamera,
     theme 
   } = useAppStore();
 
@@ -55,7 +56,7 @@ export default function ScenePanel({ isOpen, onClose }: ScenePanelProps) {
       transition={{ duration: 0.25, ease: "easeOut" }}
       className={`absolute top-0 left-0 bottom-0 w-72 z-20 pointer-events-auto ${
         theme === 'dark' 
-          ? 'bg-gray-800 border-r border-gray-700' 
+          ? 'bg-gray-900/95 border-r border-gray-700' 
           : 'bg-white border-r border-gray-200'
       }`}
     >
@@ -368,10 +369,7 @@ export default function ScenePanel({ isOpen, onClose }: ScenePanelProps) {
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => {
-                        setCameraDistance(5);
-                        setObjectScale(1);
-                      }}
+                      onClick={resetCamera}
                       className={`w-full p-2 rounded border transition-colors text-xs font-medium ${
                         theme === 'dark'
                           ? 'bg-gray-700 border-gray-600 hover:border-gray-500 text-gray-200'
