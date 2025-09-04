@@ -133,7 +133,7 @@ export default function BentoLayout() {
         <motion.div
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="absolute top-2 left-2 sm:top-1 sm:left-1 pointer-events-auto z-40"
+          className="absolute top-4 left-2 sm:top-1 sm:left-1 pointer-events-auto z-40"
           onClick={() => {
             // Quick test: Load sample animated GLB
             const { setModelUrl, setModelId, setModelFileName } = useAppStore.getState();
@@ -167,7 +167,7 @@ export default function BentoLayout() {
               // Close gallery if open
               if (isGalleryOpen) toggleGallery();
             }}
-            className={`absolute bottom-2 left-2 sm:bottom-4 sm:left-4 z-50 ${getButtonStyle('text-green-600')}`}
+            className={`absolute bottom-4 left-2 sm:bottom-4 sm:left-4 z-50 ${getButtonStyle('text-green-600')}`}
             title="Scene Settings"
           >
             <Sliders className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -201,7 +201,7 @@ export default function BentoLayout() {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsQueueOpen(true)}
-            className={`absolute top-2 right-2 sm:top-4 sm:right-4 z-40 ${getButtonStyle(queueCount > 0 ? 'bg-orange-600' : 'text-purple-600')}`}
+            className={`absolute top-4 right-2 sm:top-4 sm:right-4 z-40 ${getButtonStyle(queueCount > 0 ? 'bg-orange-600' : 'text-purple-600')}`}
             title={queueCount > 0 ? `Queue (${queueCount})` : "Queue"}
           >
             <Layers className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -224,7 +224,7 @@ export default function BentoLayout() {
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={toggleSettings}
-          className={`absolute bottom-2 right-2 sm:bottom-4 sm:right-4 z-40 ${getButtonStyle('text-purple-600')}`}
+          className={`absolute bottom-4 right-2 sm:bottom-4 sm:right-4 z-40 ${getButtonStyle('text-purple-600')}`}
           title="Settings"
         >
           <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -234,7 +234,7 @@ export default function BentoLayout() {
         {/* Texture Preview Toggle - Top Center (only when closed) */}
         {hasContent && !isPreviewOpen && (
           <div 
-            className="absolute top-4 z-40 transition-all duration-300 ease-out"
+            className="absolute top-4 sm:top-4 z-40 transition-all duration-300 ease-out"
             style={{
               left: (isGalleryOpen || isSceneOpen) ? '272px' : '8px', // Tighter mobile padding
               right: showQueuePanel ? '272px' : '8px', // Tighter mobile padding
@@ -251,7 +251,7 @@ export default function BentoLayout() {
               className={getButtonStyle('text-blue-600')}
               title="Show Texture Preview"
             >
-              <Eye className="h-5 w-5" />
+              <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
             </motion.button>
           </div>
         )}
@@ -269,7 +269,7 @@ export default function BentoLayout() {
             style={{
               left: (isGalleryOpen || isSceneOpen) ? '272px' : '8px', // Tighter mobile clearance
               right: showQueuePanel ? '272px' : '8px', // Tighter mobile clearance
-              bottom: '16px' // More clearance from bottom for mobile
+              bottom: '20px' // Account for mobile browser UI
             }}
           >
             <BottomControlBar />

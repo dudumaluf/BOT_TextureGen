@@ -614,7 +614,7 @@ export default function BottomControlBar() {
           <motion.div
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center relative"
+            className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center relative aspect-square"
           >
             <Box className={`h-6 w-6 transition-colors duration-300 ${
               modelUrl 
@@ -652,7 +652,7 @@ export default function BottomControlBar() {
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center"
+                className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center aspect-square"
               >
                 <ImageIcon className={`h-6 w-6 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
               </motion.div>
