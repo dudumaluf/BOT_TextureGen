@@ -14,6 +14,8 @@ import { useState } from "react";
 import SettingsModal from "./SettingsPanel";
 import ScenePanel from "./ScenePanel";
 import AnimationTimeline from "./AnimationTimeline";
+import { useViewportHeight } from "@/hooks/useViewportHeight";
+import { useResponsive } from "@/hooks/useResponsive";
 
 export default function BentoLayout() {
   const { 
@@ -33,6 +35,10 @@ export default function BentoLayout() {
     setShowAnimationTimeline
   } = useAppStore();
   
+  // Initialize viewport height fix for mobile browsers
+  useViewportHeight();
+  const { isMobile } = useResponsive();
+  
   const [isQueueOpen, setIsQueueOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSceneOpen, setIsSceneOpen] = useState(false);
@@ -45,7 +51,7 @@ export default function BentoLayout() {
   // Helper functions for panel management
   const handleOpenPanel = () => {
     // On mobile, close prompt panel to avoid clutter, on desktop allow coexistence
-    if (window.innerWidth < 640 && isBottomBarOpen) {
+    if (isMobile && isBottomBarOpen) {
       setWasPromptPanelOpen(true);
       toggleBottomBar(); // Close prompt panel on mobile only
     } else {
@@ -55,7 +61,7 @@ export default function BentoLayout() {
 
   const handleClosePanel = () => {
     // Restore prompt panel if it was open before (mobile only)
-    if (wasPromptPanelOpen && !isBottomBarOpen && window.innerWidth < 640) {
+    if (wasPromptPanelOpen && !isBottomBarOpen && isMobile) {
       toggleBottomBar(); // Reopen prompt panel on mobile
       setWasPromptPanelOpen(false);
     }
@@ -83,7 +89,7 @@ export default function BentoLayout() {
   };
 
   return (
-    <div className={`h-screen w-screen relative overflow-hidden mobile-container ${theme === 'dark' ? 'dark bg-gray-900' : 'bg-gray-100'}`}>
+    <div className={`relative overflow-hidden mobile-container js-vh-fix ${theme === 'dark' ? 'dark bg-gray-900' : 'bg-gray-100'} ${isMobile ? 'w-screen' : 'h-screen w-screen'}`}>
       {/* Full-Screen 3D Viewer - Never Resizes */}
       <div className="absolute inset-0">
         <Viewer />
@@ -176,7 +182,7 @@ export default function BentoLayout() {
             initial={{ opacity: 0, x: 0 }}
             animate={{ 
               opacity: 1,
-              x: window.innerWidth < 640 
+              x: isMobile 
                 ? (anyPanelOpen ? -100 : 0)  // Mobile: slide left off-screen on any panel
                 : (isSceneOpen ? -60 : 0)    // Desktop: slide left when scene panel is open
             }}
@@ -220,7 +226,7 @@ export default function BentoLayout() {
             initial={{ opacity: 0, x: 0 }}
             animate={{ 
               opacity: 1,
-              x: window.innerWidth < 640 
+              x: isMobile 
                 ? (anyPanelOpen ? -100 : 0)  // Mobile: slide left off-screen on any panel
                 : (isGalleryOpen ? -60 : 0)  // Desktop: slide left when gallery panel is open
             }}
@@ -264,7 +270,7 @@ export default function BentoLayout() {
             initial={{ opacity: 0, x: 0 }}
             animate={{ 
               opacity: 1,
-              x: window.innerWidth < 640 ? (anyPanelOpen ? 100 : 0) : 0  // Mobile: slide right off-screen, Desktop: stay in place
+              x: isMobile ? (anyPanelOpen ? 100 : 0) : 0  // Mobile: slide right off-screen, Desktop: stay in place
             }}
             transition={{ duration: 0.3, ease: "easeOut" }}
             whileHover={{ scale: 1.1 }}
@@ -292,12 +298,12 @@ export default function BentoLayout() {
         {/* Settings Toggle - Center Right */}
         <motion.button
           initial={{ opacity: 0, x: 0 }}
-          animate={{ 
-            opacity: showQueuePanel ? 0 : 1,  // Fade only when queue panel is open
-            x: window.innerWidth < 640 
-              ? (anyPanelOpen ? 100 : 0)  // Mobile: slide right on any panel
-              : (showQueuePanel ? 100 : 0)  // Desktop: slide right only on queue panel
-          }}
+                      animate={{ 
+              opacity: showQueuePanel ? 0 : 1,  // Fade only when queue panel is open
+              x: isMobile 
+                ? (anyPanelOpen ? 100 : 0)  // Mobile: slide right on any panel
+                : (showQueuePanel ? 100 : 0)  // Desktop: slide right only on queue panel
+            }}
           transition={{ duration: 0.3, ease: "easeOut" }}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
@@ -314,7 +320,7 @@ export default function BentoLayout() {
             initial={{ opacity: 0, x: 0 }}
             animate={{ 
               opacity: 1,
-              x: window.innerWidth < 640 ? (anyPanelOpen ? 100 : 0) : (showQueuePanel ? 100 : 0)  // Mobile: slide on any panel, Desktop: slide only on queue panel
+              x: isMobile ? (anyPanelOpen ? 100 : 0) : (showQueuePanel ? 100 : 0)  // Mobile: slide on any panel, Desktop: slide only on queue panel
             }}
             transition={{ duration: 0.3, ease: "easeOut" }}
             whileHover={{ scale: 1.1 }}
@@ -348,8 +354,8 @@ export default function BentoLayout() {
             className="absolute bottom-0 z-20 transition-all duration-500"
             style={{
               // Mobile: Account for wider panels, Desktop: Stay in fixed position
-              left: window.innerWidth < 640 ? '8px' : '8px',
-              right: window.innerWidth < 640 ? '8px' : '8px',
+              left: '8px',
+              right: '8px',
               bottom: '20px' // Account for mobile browser UI
             }}
           >
@@ -369,8 +375,8 @@ export default function BentoLayout() {
             className="absolute bottom-0 z-20 transition-all duration-500"
             style={{
               // Mobile: Account for wider panels, Desktop: Original positioning  
-              left: window.innerWidth < 640 ? '8px' : (isGalleryOpen || isSceneOpen) ? '272px' : '8px',
-              right: window.innerWidth < 640 ? '8px' : showQueuePanel ? '272px' : '8px',
+              left: isMobile ? '8px' : (isGalleryOpen || isSceneOpen) ? '272px' : '8px',
+              right: isMobile ? '8px' : showQueuePanel ? '272px' : '8px',
               bottom: '80px', // Move up from bottom
               display: 'flex',
               justifyContent: 'center'
@@ -387,8 +393,8 @@ export default function BentoLayout() {
           className="absolute bottom-4 z-40 transition-all duration-300 ease-out pointer-events-none"
           style={{
             // Mobile: Account for wider panels, Desktop: Stay in fixed position
-            left: window.innerWidth < 640 ? '8px' : '8px',
-            right: window.innerWidth < 640 ? '8px' : '8px',
+            left: '8px',
+            right: '8px',
             display: 'flex',
             justifyContent: 'center'
           }}
@@ -398,7 +404,7 @@ export default function BentoLayout() {
             animate={{ 
               opacity: 1,
               x: 0,  // No horizontal movement
-              y: window.innerWidth < 640 ? ((anyPanelOpen && !isBottomBarOpen) ? 100 : 0) : 0  // Mobile: slide down when other panels open, Desktop: stay in place
+              y: isMobile ? ((anyPanelOpen && !isBottomBarOpen) ? 100 : 0) : 0  // Mobile: slide down when other panels open, Desktop: stay in place
             }}
             transition={{ duration: 0.3, ease: "easeOut" }}
             whileHover={{ scale: 1.1 }}

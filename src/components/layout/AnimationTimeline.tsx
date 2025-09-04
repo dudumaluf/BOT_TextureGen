@@ -4,6 +4,7 @@ import { useAppStore } from "@/store/appStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { useResponsive } from "@/hooks/useResponsive";
 
 interface AnimationTimelineProps {
   isQueueOpen?: boolean;
@@ -27,6 +28,8 @@ export default function AnimationTimeline({ isQueueOpen = false, isSceneOpen = f
     setIsAnimationPlaying,
     setAnimationPlaybackSpeed
   } = useAppStore();
+
+  const { isMobile, isInitialized } = useResponsive();
 
   const [isDragging, setIsDragging] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -123,6 +126,11 @@ export default function AnimationTimeline({ isQueueOpen = false, isSceneOpen = f
     return null;
   }
 
+  // Don't render during SSR/initial load to prevent hydration mismatch
+  if (!isInitialized) {
+    return null;
+  }
+
   const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!timelineRef.current) return;
     
@@ -183,14 +191,14 @@ export default function AnimationTimeline({ isQueueOpen = false, isSceneOpen = f
       bottomPosition = `${totalOffset}px`;
     } else {
       // Mobile: Higher position to avoid clashing with side toggles, Desktop: normal position
-      bottomPosition = window.innerWidth < 640 ? '140px' : '100px';
+      bottomPosition = isMobile ? '140px' : '100px';
     }
     
     return { 
       bottom: bottomPosition,
       // Mobile: Full width with padding, Desktop: Fixed like prompt panel
-      left: window.innerWidth < 640 ? '16px' : '8px',
-      right: window.innerWidth < 640 ? '16px' : '8px',
+      left: isMobile ? '16px' : '8px',
+      right: isMobile ? '16px' : '8px',
       transform: 'none'
     };
   };
@@ -222,17 +230,17 @@ export default function AnimationTimeline({ isQueueOpen = false, isSceneOpen = f
         <div className="w-full">
           {/* Mobile: Full width centered, Desktop: Match prompt panel structure */}
           <div className={`flex items-center w-full ${
-            window.innerWidth < 640 
+            isMobile 
               ? 'justify-center gap-2 px-2' // Mobile: centered with tight spacing
               : 'gap-4 max-w-4xl mx-auto px-6' // Desktop: match prompt panel
           }`}>
             
             {/* Desktop spacer for upload panels (only on desktop) */}
-            {window.innerWidth >= 640 && <div className="w-20 flex-shrink-0"></div>}
+            {!isMobile && <div className="w-20 flex-shrink-0"></div>}
             
             {/* Timeline controls container */}
             <div className={`flex items-center ${
-              window.innerWidth < 640 
+              isMobile 
                 ? 'gap-2 flex-1 justify-center' // Mobile: centered, full width
                 : 'gap-4 flex-1' // Desktop: normal spacing
             }`}>
@@ -242,7 +250,7 @@ export default function AnimationTimeline({ isQueueOpen = false, isSceneOpen = f
               whileTap={{ scale: 0.9 }}
               onClick={handlePlayPause}
               className={`${
-                window.innerWidth < 640 ? 'p-1.5' : 'p-2'
+                isMobile ? 'p-1.5' : 'p-2'
               } rounded-full transition-colors ${
                 isAnimationPlaying
                   ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30'
@@ -251,9 +259,9 @@ export default function AnimationTimeline({ isQueueOpen = false, isSceneOpen = f
               title={isAnimationPlaying ? 'Pause' : 'Play'}
             >
               {isAnimationPlaying ? (
-                <Pause className={window.innerWidth < 640 ? "h-3 w-3" : "h-4 w-4"} />
+                <Pause className={isMobile ? "h-3 w-3" : "h-4 w-4"} />
               ) : (
-                <Play className={window.innerWidth < 640 ? "h-3 w-3" : "h-4 w-4"} />
+                <Play className={isMobile ? "h-3 w-3" : "h-4 w-4"} />
               )}
             </motion.button>
 
@@ -263,7 +271,7 @@ export default function AnimationTimeline({ isQueueOpen = false, isSceneOpen = f
               whileTap={{ scale: 0.9 }}
               onClick={handleSpeedChange}
               className={`${
-                window.innerWidth < 640 ? 'px-1.5 py-0.5 text-xs' : 'px-2 py-1 text-xs'
+                isMobile ? 'px-1.5 py-0.5 text-xs' : 'px-2 py-1 text-xs'
               } rounded-lg font-mono backdrop-blur-sm border transition-all ${
                 theme === 'dark'
                   ? 'bg-gray-800/90 border-gray-700 text-gray-200 hover:bg-gray-700/90'
@@ -276,10 +284,10 @@ export default function AnimationTimeline({ isQueueOpen = false, isSceneOpen = f
 
             {/* Timeline */}
             <div className={`flex-1 flex items-center ${
-              window.innerWidth < 640 ? 'gap-2' : 'gap-3'
+              isMobile ? 'gap-2' : 'gap-3'
             }`}>
               {/* Animation Selector (if multiple) - Hide on mobile if too cramped */}
-              {animationNames.length > 1 && window.innerWidth >= 640 && (
+              {animationNames.length > 1 && !isMobile && (
                 <select
                   value={currentAnimation || ''}
                   onChange={(e) => handleAnimationChange(e.target.value)}
@@ -309,7 +317,7 @@ export default function AnimationTimeline({ isQueueOpen = false, isSceneOpen = f
                 <div
                   ref={timelineRef}
                   className={`relative ${
-                    window.innerWidth < 640 ? 'h-2' : 'h-1'
+                    isMobile ? 'h-2' : 'h-1'
                   } rounded-full cursor-pointer ${
                     theme === 'dark' ? 'bg-gray-700' : 'bg-gray-300'
                   }`}
@@ -327,17 +335,17 @@ export default function AnimationTimeline({ isQueueOpen = false, isSceneOpen = f
                   {/* Playhead - Larger on mobile for better touch interaction */}
                   <div
                     className={`absolute top-1/2 transform -translate-y-1/2 ${
-                      window.innerWidth < 640 ? 'w-4 h-4' : 'w-3 h-3'
+                      isMobile ? 'w-4 h-4' : 'w-3 h-3'
                     } bg-white rounded-full shadow-lg border-2 border-blue-500`}
                     style={{ 
-                      left: `calc(${animationTime * 100}% - ${window.innerWidth < 640 ? '8px' : '6px'})` 
+                      left: `calc(${animationTime * 100}% - ${isMobile ? '8px' : '6px'})` 
                     }}
                   />
                 </div>
               </div>
 
               {/* Time Display - Hide on mobile if too cramped */}
-              {window.innerWidth >= 640 && (
+              {!isMobile && (
                 <div className={`text-xs font-mono tabular-nums ${
                   theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
                 }`}>
