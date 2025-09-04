@@ -13,7 +13,7 @@ export default function GalleryPanel() {
     setGenerations, 
     loadGeneration, 
     toggleGallery,
-    addToQueue,
+    addToBatchQueue,
     theme
   } = useAppStore();
   const supabase = createClient();
@@ -27,7 +27,7 @@ export default function GalleryPanel() {
       return;
     }
     
-    addToQueue({
+    addToBatchQueue({
       ...generation,
       type: 'upgrade' as const,
       originalId: generation.id,
