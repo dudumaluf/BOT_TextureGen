@@ -8,7 +8,7 @@ import AssetPreview from "./AssetPreview";
 import BottomControlBar from "./BottomControlBar";
 import Viewer from "@/components/3d/Viewer";
 import LoadingOverlay from "./LoadingOverlay";
-import { Library, Layers, Eye, EyeOff, Settings, Sliders, MessageSquare, Edit3, Play } from "lucide-react";
+import { Library, Layers, Eye, EyeOff, Settings, Sliders, MessageSquare, Edit3, Play, X, ListOrdered } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import SettingsModal from "./SettingsPanel";
@@ -23,6 +23,7 @@ export default function BentoLayout() {
     generatedTextures,
     referenceImageUrl,
     isBottomBarOpen,
+    isSettingsOpen,
     theme,
     hasAnimations,
     showAnimationTimeline,
@@ -33,12 +34,32 @@ export default function BentoLayout() {
   } = useAppStore();
   
   const [isQueueOpen, setIsQueueOpen] = useState(false);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(true);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSceneOpen, setIsSceneOpen] = useState(false);
+  const [wasPromptPanelOpen, setWasPromptPanelOpen] = useState(false);
 
   const hasGenerations = generations && generations.length > 0;
   const hasQueue = queueCount > 0;
-  const hasContent = generatedTextures.diffuse || generatedTextures.normal || generatedTextures.height || generatedTextures.thumbnail || generatedTextures.depth_preview || generatedTextures.front_preview || referenceImageUrl;
+  const hasContent = generatedTextures.diffuse || generatedTextures.normal || generatedTextures.height || generatedTextures.thumbnail || generatedTextures.depth_preview || generatedTextures.front_preview;
+
+  // Helper functions for panel management
+  const handleOpenPanel = () => {
+    // On mobile, close prompt panel to avoid clutter, on desktop allow coexistence
+    if (window.innerWidth < 640 && isBottomBarOpen) {
+      setWasPromptPanelOpen(true);
+      toggleBottomBar(); // Close prompt panel on mobile only
+    } else {
+      setWasPromptPanelOpen(false);
+    }
+  };
+
+  const handleClosePanel = () => {
+    // Restore prompt panel if it was open before (mobile only)
+    if (wasPromptPanelOpen && !isBottomBarOpen && window.innerWidth < 640) {
+      toggleBottomBar(); // Reopen prompt panel on mobile
+      setWasPromptPanelOpen(false);
+    }
+  };
 
   // Common button styling based on theme
   const getButtonStyle = (hoverColor: string) => 
@@ -50,6 +71,9 @@ export default function BentoLayout() {
 
   // Show queue panel only when user explicitly opens it
   const showQueuePanel = isQueueOpen;
+  
+  // STANDARD RULE: When ANY panel is open, only close button should be interactive
+  const anyPanelOpen = isGalleryOpen || showQueuePanel || isSceneOpen || isBottomBarOpen || isPreviewOpen || isSettingsOpen;
 
   // Calculate grid layout for bento box
   const getGridCols = () => {
@@ -74,7 +98,7 @@ export default function BentoLayout() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -320, opacity: 0 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className={`absolute top-0 left-0 bottom-0 w-64 sm:w-72 z-20 pointer-events-auto ${
+            className={`absolute top-0 left-0 bottom-0 w-full sm:w-72 z-20 pointer-events-auto ${
               theme === 'dark' 
                 ? 'bg-gray-900/95 border-r border-gray-700' 
                 : 'bg-white border-r border-gray-200'
@@ -87,7 +111,10 @@ export default function BentoLayout() {
       </AnimatePresence>
 
       {/* Scene Panel (Overlay) */}
-      <ScenePanel isOpen={isSceneOpen} onClose={() => setIsSceneOpen(false)} />
+      <ScenePanel isOpen={isSceneOpen} onClose={() => {
+        setIsSceneOpen(false);
+        handleClosePanel(); // Restore prompt panel if needed
+      }} />
 
       {/* Right Panel - Queue (Overlay) */}
       <AnimatePresence>
@@ -97,43 +124,31 @@ export default function BentoLayout() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 320, opacity: 0 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className={`absolute top-0 right-0 bottom-0 w-64 sm:w-72 z-20 pointer-events-auto ${
+            className={`absolute top-0 right-0 bottom-0 w-full sm:w-72 z-20 pointer-events-auto ${
               theme === 'dark' 
                 ? 'bg-gray-900/95 border-l border-gray-700' 
                 : 'bg-white border-l border-gray-200'
             }`}
             style={{ pointerEvents: 'auto' }}
           >
-            <QueuePanel isOpen={true} onClose={() => setIsQueueOpen(false)} />
+            <QueuePanel isOpen={true} onClose={() => {
+              setIsQueueOpen(false);
+              handleClosePanel(); // Restore prompt panel if needed
+            }} />
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* 3D Viewer Overlay Content - Only interactive elements */}
-      <div className="absolute inset-0 z-10 pointer-events-none">
-                  {/* Asset Preview - Dynamically Centered */}
-          {hasContent && isPreviewOpen && (
-            <div 
-              className="absolute top-20 sm:top-24 pointer-events-auto transition-all duration-300 ease-out"
-              style={{
-                left: (isGalleryOpen || isSceneOpen) ? '272px' : '16px', // More clearance from edges
-                right: showQueuePanel ? '272px' : '16px', // More clearance from edges
-                display: 'flex',
-                justifyContent: 'center'
-              }}
-            >
-              <AssetPreview isOpen={true} onClose={() => setIsPreviewOpen(false)} />
-            </div>
-          )}
-
-
-        {/* Always-Visible Toggle Buttons */}
-        
+      {/* UI Controls Layer - Rendered ABOVE Canvas with highest z-index */}
+      <div className="absolute inset-0 z-[100] pointer-events-none">
         {/* TextureGen Logo - Top Left */}
         <motion.div
-          initial={{ y: -50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="absolute top-2 left-2 sm:top-1 sm:left-1 pointer-events-auto z-40"
+          initial={{ opacity: 0 }}
+          animate={{ 
+            opacity: (isGalleryOpen || showQueuePanel || isSceneOpen || isPreviewOpen || isSettingsOpen) ? 0 : 1 
+          }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className={`absolute top-2 left-2 sm:top-1 sm:left-1 z-[110] ${(isGalleryOpen || showQueuePanel || isSceneOpen || isPreviewOpen || isSettingsOpen) ? 'pointer-events-none' : 'pointer-events-auto'}`}
           onClick={() => {
             // Quick test: Load sample animated GLB
             const { setModelUrl, setModelId, setModelFileName } = useAppStore.getState();
@@ -141,7 +156,7 @@ export default function BentoLayout() {
             setModelId('sample-animated-model');
             setModelFileName('Elo_Animations.glb');
           }}
-          style={{ cursor: 'pointer' }}
+          style={{ cursor: anyPanelOpen ? 'default' : 'pointer' }}
           title="Click to load sample animated model"
         >
           <Image
@@ -158,17 +173,42 @@ export default function BentoLayout() {
         {/* Gallery Toggle - Center Left */}
         {!isGalleryOpen && (
           <motion.button
-            initial={{ x: -50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
+            initial={{ opacity: 0, x: 0 }}
+            animate={{ 
+              opacity: 1,
+              x: window.innerWidth < 640 
+                ? (anyPanelOpen ? -100 : 0)  // Mobile: slide left off-screen on any panel
+                : (isSceneOpen ? -60 : 0)    // Desktop: slide left when scene panel is open
+            }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            onClick={() => {
+            onTouchStart={(e) => {
+              console.log('Gallery toggle touched!');
+              e.stopPropagation();
+              e.preventDefault();
+              handleOpenPanel();
               toggleGallery();
-              // Close scene panel if open
               if (isSceneOpen) setIsSceneOpen(false);
             }}
-            className={`absolute top-1/2 left-2 sm:left-4 transform -translate-y-1/2 z-50 ${getButtonStyle('text-blue-600')}`}
+            onPointerDown={(e) => {
+              console.log('Gallery toggle pointer down!');
+              e.stopPropagation();
+              e.preventDefault();
+              handleOpenPanel();
+              toggleGallery();
+              if (isSceneOpen) setIsSceneOpen(false);
+            }}
+            onClick={(e) => {
+              console.log('Gallery toggle clicked!');
+              e.stopPropagation();
+              handleOpenPanel();
+              toggleGallery();
+              if (isSceneOpen) setIsSceneOpen(false);
+            }}
+            className={`absolute bottom-20 left-2 sm:left-4 z-[120] w-12 h-12 flex items-center justify-center pointer-events-auto ${getButtonStyle('text-blue-600')}`}
             title="Gallery"
+            style={{ touchAction: 'manipulation' }}
           >
             <Library className="h-4 w-4 sm:h-5 sm:w-5" />
           </motion.button>
@@ -177,34 +217,66 @@ export default function BentoLayout() {
         {/* Scene Settings Toggle - Underneath Gallery on Mobile, Bottom Left on Desktop */}
         {!isSceneOpen && (
           <motion.button
-            initial={{ x: -50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
+            initial={{ opacity: 0, x: 0 }}
+            animate={{ 
+              opacity: 1,
+              x: window.innerWidth < 640 
+                ? (anyPanelOpen ? -100 : 0)  // Mobile: slide left off-screen on any panel
+                : (isGalleryOpen ? -60 : 0)  // Desktop: slide left when gallery panel is open
+            }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            onClick={() => {
+            onTouchStart={(e) => {
+              console.log('Scene toggle touched!');
+              e.stopPropagation();
+              e.preventDefault();
+              handleOpenPanel();
               setIsSceneOpen(true);
-              // Close gallery if open
               if (isGalleryOpen) toggleGallery();
             }}
-            className={`absolute top-1/2 left-2 transform translate-y-16 sm:bottom-4 sm:left-4 sm:transform-none z-50 ${getButtonStyle('text-green-600')}`}
+            onPointerDown={(e) => {
+              console.log('Scene toggle pointer down!');
+              e.stopPropagation();
+              e.preventDefault();
+              handleOpenPanel();
+              setIsSceneOpen(true);
+              if (isGalleryOpen) toggleGallery();
+            }}
+            onClick={(e) => {
+              console.log('Scene toggle clicked!');
+              e.stopPropagation();
+              handleOpenPanel();
+              setIsSceneOpen(true);
+              if (isGalleryOpen) toggleGallery();
+            }}
+            className={`absolute bottom-4 left-2 sm:left-4 z-[120] w-12 h-12 flex items-center justify-center pointer-events-auto ${getButtonStyle('text-green-600')}`}
             title="Scene Settings"
+            style={{ touchAction: 'manipulation' }}
           >
             <Sliders className="h-4 w-4 sm:h-5 sm:w-5" />
           </motion.button>
         )}
 
-        {/* Queue Toggle - Top Right Corner */}
+        {/* Queue Toggle - Moves to asset preview position when no assets available */}
         {!showQueuePanel && (
           <motion.button
-            initial={{ y: -50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
+            initial={{ opacity: 0, x: 0 }}
+            animate={{ 
+              opacity: 1,
+              x: window.innerWidth < 640 ? (anyPanelOpen ? 100 : 0) : 0  // Mobile: slide right off-screen, Desktop: stay in place
+            }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            onClick={() => setIsQueueOpen(true)}
-            className={`absolute top-4 right-2 sm:top-4 sm:right-4 z-40 ${getButtonStyle(queueCount > 0 ? 'bg-orange-600' : 'text-purple-600')}`}
+            onClick={() => {
+              handleOpenPanel();
+              setIsQueueOpen(true);
+            }}
+            className={`absolute ${hasContent ? 'bottom-20 right-2 sm:right-4' : 'bottom-4 right-2 sm:right-4'} z-[110] w-12 h-12 flex items-center justify-center pointer-events-auto ${getButtonStyle(queueCount > 0 ? 'bg-orange-600' : 'text-purple-600')}`}
             title={queueCount > 0 ? `Queue (${queueCount})` : "Queue"}
           >
-            <Layers className="h-4 w-4 sm:h-5 sm:w-5" />
+            <ListOrdered className="h-4 w-4 sm:h-5 sm:w-5" />
             {queueCount > 0 && (
               <motion.div
                 initial={{ scale: 0 }}
@@ -219,41 +291,49 @@ export default function BentoLayout() {
 
         {/* Settings Toggle - Center Right */}
         <motion.button
-          initial={{ x: 50, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
+          initial={{ opacity: 0, x: 0 }}
+          animate={{ 
+            opacity: showQueuePanel ? 0 : 1,  // Fade only when queue panel is open
+            x: window.innerWidth < 640 
+              ? (anyPanelOpen ? 100 : 0)  // Mobile: slide right on any panel
+              : (showQueuePanel ? 100 : 0)  // Desktop: slide right only on queue panel
+          }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={toggleSettings}
-          className={`absolute top-1/2 right-2 sm:right-4 transform -translate-y-1/2 z-40 ${getButtonStyle('text-purple-600')}`}
+          className={`absolute top-4 right-2 sm:top-4 sm:right-4 z-[110] w-12 h-12 flex items-center justify-center ${showQueuePanel ? 'pointer-events-none' : 'pointer-events-auto'} ${getButtonStyle('text-purple-600')}`}
           title="Settings"
         >
           <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
         </motion.button>
 
-
-        {/* Texture Preview Toggle - Top Center (only when closed) */}
-        {hasContent && !isPreviewOpen && (
-          <div 
-            className="absolute top-4 sm:top-4 z-40 transition-all duration-300 ease-out"
-            style={{
-              left: (isGalleryOpen || isSceneOpen) ? '272px' : '8px', // Tighter mobile padding
-              right: showQueuePanel ? '272px' : '8px', // Tighter mobile padding
-              display: 'flex',
-              justifyContent: 'center'
+        {/* Asset Preview Toggle - Bottom Right */}
+        {hasContent && (
+          <motion.button
+            initial={{ opacity: 0, x: 0 }}
+            animate={{ 
+              opacity: 1,
+              x: window.innerWidth < 640 ? (anyPanelOpen ? 100 : 0) : (showQueuePanel ? 100 : 0)  // Mobile: slide on any panel, Desktop: slide only on queue panel
             }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => {
+              if (!isPreviewOpen && isBottomBarOpen) {
+                toggleBottomBar();
+              }
+              setIsPreviewOpen(!isPreviewOpen);
+            }}
+            className={`absolute bottom-4 right-2 sm:right-4 z-[110] w-12 h-12 flex items-center justify-center pointer-events-auto ${getButtonStyle(isPreviewOpen ? 'text-red-600' : 'text-blue-600')}`}
+            title={isPreviewOpen ? "Hide Texture Preview" : "Show Texture Preview"}
           >
-            <motion.button
-              initial={{ y: -50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setIsPreviewOpen(true)}
-              className={getButtonStyle('text-blue-600')}
-              title="Show Texture Preview"
-            >
-              <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
-            </motion.button>
-          </div>
+            {isPreviewOpen ? (
+              <X className="h-4 w-4 sm:h-5 sm:w-5" />
+            ) : (
+              <Layers className="h-4 w-4 sm:h-5 sm:w-5" />
+            )}
+          </motion.button>
         )}
       </div>
 
@@ -267,13 +347,36 @@ export default function BentoLayout() {
             transition={{ duration: 0.25, ease: "easeOut" }}
             className="absolute bottom-0 z-20 transition-all duration-500"
             style={{
-              // Mobile: Full width with small margins
-              left: window.innerWidth < 640 ? '8px' : (isGalleryOpen || isSceneOpen) ? '272px' : '8px',
-              right: window.innerWidth < 640 ? '8px' : showQueuePanel ? '272px' : '8px',
+              // Mobile: Account for wider panels, Desktop: Stay in fixed position
+              left: window.innerWidth < 640 ? '8px' : '8px',
+              right: window.innerWidth < 640 ? '8px' : '8px',
               bottom: '20px' // Account for mobile browser UI
             }}
           >
             <BottomControlBar />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Asset Preview Panel - Bottom positioned like prompt panel */}
+      <AnimatePresence>
+        {hasContent && isPreviewOpen && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="absolute bottom-0 z-20 transition-all duration-500"
+            style={{
+              // Mobile: Account for wider panels, Desktop: Original positioning  
+              left: window.innerWidth < 640 ? '8px' : (isGalleryOpen || isSceneOpen) ? '272px' : '8px',
+              right: window.innerWidth < 640 ? '8px' : showQueuePanel ? '272px' : '8px',
+              bottom: '80px', // Move up from bottom
+              display: 'flex',
+              justifyContent: 'center'
+            }}
+          >
+            <AssetPreview isOpen={true} onClose={undefined} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -283,23 +386,75 @@ export default function BentoLayout() {
         <div 
           className="absolute bottom-4 z-40 transition-all duration-300 ease-out pointer-events-none"
           style={{
-            // Mobile: Full width with small margins, Desktop: Respect panels
-            left: window.innerWidth < 640 ? '8px' : (isGalleryOpen || isSceneOpen) ? '272px' : '8px',
-            right: window.innerWidth < 640 ? '8px' : showQueuePanel ? '272px' : '8px',
+            // Mobile: Account for wider panels, Desktop: Stay in fixed position
+            left: window.innerWidth < 640 ? '8px' : '8px',
+            right: window.innerWidth < 640 ? '8px' : '8px',
             display: 'flex',
             justifyContent: 'center'
           }}
         >
           <motion.button
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
+            initial={{ opacity: 0, x: 0, y: 0 }}
+            animate={{ 
+              opacity: 1,
+              x: 0,  // No horizontal movement
+              y: window.innerWidth < 640 ? ((anyPanelOpen && !isBottomBarOpen) ? 100 : 0) : 0  // Mobile: slide down when other panels open, Desktop: stay in place
+            }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            onClick={toggleBottomBar}
-            className={`pointer-events-auto ${getButtonStyle('text-blue-600')}`}
+            onClick={() => {
+              if (!isBottomBarOpen && isPreviewOpen) {
+                setIsPreviewOpen(false); // Close asset preview if open
+              }
+              toggleBottomBar();
+            }}
+            className={`w-12 h-12 flex items-center justify-center pointer-events-auto ${getButtonStyle('text-blue-600')}`}
             title="Open Controls"
           >
             <Edit3 className="h-5 w-5" />
+          </motion.button>
+        </div>
+      )}
+
+      {/* Mobile Panel Close Buttons - Same position as prompt toggle - MOBILE ONLY */}
+      {(isGalleryOpen || showQueuePanel || isSceneOpen || isPreviewOpen || isSettingsOpen) && (
+        <div 
+          className="sm:hidden absolute bottom-4 left-2 right-2 z-[130] transition-all duration-300 ease-out pointer-events-none flex justify-center"
+        >
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onTouchStart={(e) => {
+              console.log('Mobile close button touched!');
+              e.stopPropagation();
+            }}
+            onClick={(e) => {
+              console.log('Mobile close button clicked!');
+              e.stopPropagation();
+              if (isGalleryOpen) {
+                toggleGallery();
+                handleClosePanel();
+              } else if (showQueuePanel) {
+                setIsQueueOpen(false);
+                handleClosePanel();
+              } else if (isSceneOpen) {
+                setIsSceneOpen(false);
+                handleClosePanel();
+              } else if (isPreviewOpen) {
+                setIsPreviewOpen(false);
+              } else if (isSettingsOpen) {
+                toggleSettings();
+              }
+            }}
+            className={`pointer-events-auto w-12 h-12 flex items-center justify-center ${getButtonStyle('text-red-600')}`}
+            title="Close Panel"
+            style={{ touchAction: 'manipulation' }}
+          >
+            <X className="h-5 w-5" />
           </motion.button>
         </div>
       )}

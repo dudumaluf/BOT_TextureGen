@@ -259,7 +259,7 @@ export const useAppStore = create<AppState>((set) => ({
   currentGeneration: null,
   generationQueue: [],
   queueCount: 0,
-  isBottomBarOpen: true, // Start open for initial setup
+  isBottomBarOpen: false, // Start closed - user opens when needed
   isSettingsOpen: false,
   isGalleryOpen: false,
   generations: [],

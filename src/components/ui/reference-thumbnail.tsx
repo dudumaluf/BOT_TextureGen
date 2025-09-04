@@ -32,6 +32,19 @@ export default function ReferenceThumbnail() {
     e.stopPropagation();
   }, [referenceStrength, isEditing]);
 
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    // Don't start dragging if touching X button or editing
+    if (isEditing || (e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    
+    setIsDragging(true);
+    dragStartY.current = e.touches[0].clientY;
+    dragStartValue.current = referenceStrength;
+    e.preventDefault();
+    e.stopPropagation();
+  }, [referenceStrength, isEditing]);
+
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging) return;
     
@@ -42,7 +55,22 @@ export default function ReferenceThumbnail() {
     setReferenceStrength(Math.round(newValue * 100) / 100); // Round to 2 decimals
   }, [isDragging, setReferenceStrength]);
 
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (!isDragging) return;
+    
+    const deltaY = dragStartY.current - e.touches[0].clientY; // Inverted: up = increase
+    const sensitivity = 0.003; // Same sensitivity as mouse
+    const newValue = Math.max(0, Math.min(1, dragStartValue.current + (deltaY * sensitivity)));
+    
+    setReferenceStrength(Math.round(newValue * 100) / 100); // Round to 2 decimals
+    e.preventDefault(); // Prevent scrolling
+  }, [isDragging, setReferenceStrength]);
+
   const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
     setIsDragging(false);
   }, []);
 
@@ -79,27 +107,31 @@ export default function ReferenceThumbnail() {
     }
   }, [handleEditSubmit, referenceStrength]);
 
-  // Add global mouse event listeners when dragging
+  // Add global mouse and touch event listeners when dragging
   React.useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('touchend', handleTouchEnd);
       document.body.style.cursor = 'ns-resize';
       document.body.style.userSelect = 'none';
       
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('touchmove', handleTouchMove);
+        document.removeEventListener('touchend', handleTouchEnd);
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
       };
     }
-  }, [isDragging, handleMouseMove, handleMouseUp]);
+  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
   return (
     <div 
       ref={thumbnailRef}
-      className="relative"
+      className="relative w-full h-full aspect-square"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onWheel={handleWheel}
@@ -109,6 +141,7 @@ export default function ReferenceThumbnail() {
           isDragging ? 'cursor-ns-resize' : 'cursor-pointer'
         }`}
         onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
       >
         <img 
           src={referenceImageUrl} 
@@ -153,33 +186,33 @@ export default function ReferenceThumbnail() {
           />
         )}
         
-        {/* Remove button */}
-        <motion.button
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ 
-            opacity: isHovered && !isDragging && !isEditing ? 1 : 0, 
-            scale: isHovered && !isDragging && !isEditing ? 1 : 0.8 
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            setReferenceImageUrl(null);
-          }}
-          className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors z-10"
-        >
-          <X className="h-3 w-3" />
-        </motion.button>
       </motion.div>
 
-      {/* Instruction tooltip */}
+      {/* Remove button - Simple, tiny, top-right corner */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setReferenceImageUrl(null);
+        }}
+        className="absolute top-0 right-0 w-6 h-6 sm:w-6 sm:h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors z-30 transform translate-x-1/2 -translate-y-1/2"
+        style={{ 
+          fontSize: window.innerWidth < 640 ? '16px' : '20px', 
+          lineHeight: '1' 
+        }}
+      >
+        ×
+      </button>
+
+      {/* Instruction tooltip - Show on hover (desktop) or when dragging (mobile) */}
       <AnimatePresence>
-        {isHovered && !isDragging && !isEditing && (
+        {((isHovered && !isDragging && !isEditing) || (isDragging && window.innerWidth < 640)) && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 bg-black/80 text-white px-2 py-1 rounded text-xs whitespace-nowrap z-50"
           >
-            Drag ↕ • Scroll • Click number
+            {window.innerWidth < 640 ? 'Drag ↕ to adjust' : 'Drag ↕ • Scroll • Click number'}
           </motion.div>
         )}
       </AnimatePresence>

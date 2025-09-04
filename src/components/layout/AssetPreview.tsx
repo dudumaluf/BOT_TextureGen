@@ -10,7 +10,7 @@ import ImagePreviewModal from "./ImagePreviewModal";
 
 interface AssetPreviewProps {
   isOpen?: boolean;
-  onClose?: () => void;
+  onClose?: (() => void) | undefined;
 }
 
 export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewProps) {
@@ -48,26 +48,28 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
     }
   };
 
-  const hasContent = referenceImageUrl || generatedTextures.diffuse || generatedTextures.thumbnail || generatedTextures.depth_preview || generatedTextures.front_preview;
+  const hasContent = generatedTextures.diffuse || generatedTextures.thumbnail || generatedTextures.depth_preview || generatedTextures.front_preview;
 
   if (!hasContent) {
     return null;
   }
 
   return (
-    <div className={`backdrop-blur-md rounded-lg sm:rounded-xl border shadow-lg max-w-full overflow-hidden ${
-      theme === 'dark' 
-        ? 'bg-gray-900/95 border-gray-700' 
-        : 'bg-white/95 border-white/20'
-    }`}>
-      <div className="p-1 sm:p-3">
-        {/* Close button */}
+    <div className="flex flex-col items-center gap-2">
+      {/* Close button removed - now using consistent bottom center close button on mobile */}
+
+      <div className={`backdrop-blur-md rounded-lg sm:rounded-xl border shadow-lg max-w-full overflow-hidden relative ${
+        theme === 'dark' 
+          ? 'bg-gray-900/95 border-gray-700' 
+          : 'bg-white/95 border-white/20'
+      }`}>
+        {/* Close button overlay for desktop */}
         {onClose && (
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={onClose}
-            className={`absolute -top-1 -right-1 p-1.5 rounded-full transition-colors z-10 shadow-sm border flex items-center justify-center ${
+            className={`hidden sm:flex absolute -top-1 -right-1 w-6 h-6 rounded-full transition-colors z-10 shadow-sm border items-center justify-center ${
               theme === 'dark'
                 ? 'bg-gray-900 hover:bg-gray-800 border-gray-700 text-gray-400'
                 : 'bg-white/90 hover:bg-gray-100 border-gray-200 text-gray-400'
@@ -76,22 +78,9 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
             <X className="h-3 w-3" />
           </motion.button>
         )}
-        <div className="flex items-center gap-1 sm:gap-3">
-                         {referenceImageUrl && (
-               <motion.div
-                 initial={{ opacity: 0, x: 20 }}
-                 animate={{ opacity: 1, x: 0 }}
-                 transition={{ delay: 0.1 }}
-               >
-                 <PreviewThumbnail
-                   src={referenceImageUrl}
-                   alt="Reference Image"
-                   title="Ref"
-                   size={40} // Same size as other thumbnails
-                   onPreview={() => openPreview(referenceImageUrl, "Reference Image", "Reference Image")}
-                 />
-               </motion.div>
-             )}
+
+        <div className="p-1 sm:p-3">
+          <div className="flex items-center gap-1 sm:gap-3">
             {generatedTextures.depth_preview && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
@@ -182,6 +171,7 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
                 />
               </motion.div>
             )}
+          </div>
         </div>
       </div>
 

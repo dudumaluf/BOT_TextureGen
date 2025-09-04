@@ -628,7 +628,7 @@ export default function BottomControlBar() {
         <motion.div
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.3, ease: "easeOut", delay: 0.1 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
           className={`relative rounded-2xl border shadow-lg w-12 h-12 sm:w-16 sm:h-16 aspect-square ${
             theme === 'dark' 
               ? 'bg-gray-900/95 border-gray-700' 
@@ -636,7 +636,7 @@ export default function BottomControlBar() {
           }`}
         >
           {referenceImageUrl ? (
-            <div className="p-2">
+            <div className="absolute inset-1">
               <ReferenceThumbnail />
             </div>
           ) : (
@@ -665,7 +665,7 @@ export default function BottomControlBar() {
       <motion.div
         initial={{ y: 50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.3, ease: "easeOut", delay: 0.2 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
         className="w-full sm:flex-1 relative"
       >
         {/* Close button */}
@@ -673,7 +673,7 @@ export default function BottomControlBar() {
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={toggleBottomBar}
-          className={`absolute -top-2 -right-2 z-10 p-1.5 rounded-full transition-all duration-150 ease-out shadow-lg border ${
+          className={`absolute -top-2 -right-2 z-10 w-8 h-8 rounded-full transition-all duration-150 ease-out shadow-lg border flex items-center justify-center ${
             theme === 'dark' 
               ? 'bg-gray-900 hover:bg-gray-800 text-gray-400 hover:text-gray-300 border-gray-700' 
               : 'bg-white hover:bg-gray-50 text-gray-500 hover:text-gray-700 border-gray-200'
@@ -739,27 +739,6 @@ export default function BottomControlBar() {
                 {selectedStyle.toUpperCase()}
               </button>
 
-              <Input 
-                type="number" 
-                value={seed} 
-                onChange={(e) => {
-                  const value = e.target.value;
-                  // Limit to 3 digits on mobile, 6 on desktop
-                  const maxLength = window.innerWidth < 640 ? 3 : 6;
-                  if (value.length <= maxLength) {
-                    setSeed(parseInt(value, 10) || 0);
-                  }
-                }}
-                disabled={false}
-                maxLength={window.innerWidth < 640 ? 3 : 6}
-                className={`w-12 sm:w-20 text-xs text-center border-0 bg-transparent focus:outline-none ${
-                  theme === 'dark'
-                    ? 'text-gray-300'
-                    : 'text-gray-700'
-                }`}
-                placeholder="Seed"
-              />
-
               {/* View Angle Selection */}
               <button
                 onClick={() => {
@@ -785,20 +764,17 @@ export default function BottomControlBar() {
               >
                 {(() => {
                   const viewLabels = {
-                    1: 'Front',
-                    2: 'Side',
-                    3: 'Back',
-                    4: 'Side',
-                    5: 'Top',
-                    6: 'Bottom'
+                    1: 'FRONT',
+                    2: 'SIDE',
+                    3: 'BACK',
+                    4: 'SIDE',
+                    5: 'TOP',
+                    6: 'BOTTOM'
                   };
-                  return viewLabels[viewAngle as keyof typeof viewLabels] || 'Front';
+                  return viewLabels[viewAngle as keyof typeof viewLabels] || 'FRONT';
                 })()}
               </button>
-            </div>
 
-            {/* Right: Minimalist Actions */}
-            <div className="flex items-center gap-1 sm:gap-4">
               {/* Quality Toggle */}
               <button
                 onClick={() => setHighQuality(!highQuality)}
@@ -813,6 +789,31 @@ export default function BottomControlBar() {
                 <span className="hidden sm:inline">{highQuality ? 'HIGH QUALITY' : 'LOW QUALITY'}</span>
                 <span className="sm:hidden">{highQuality ? 'HQ' : 'LQ'}</span>
               </button>
+            </div>
+
+            {/* Right: Minimalist Actions */}
+            <div className="flex items-center gap-1 sm:gap-4">
+              {/* Seed Input */}
+              <Input 
+                type="number" 
+                value={seed} 
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Limit to 3 digits on mobile, 6 on desktop
+                  const maxLength = window.innerWidth < 640 ? 3 : 6;
+                  if (value.length <= maxLength) {
+                    setSeed(parseInt(value, 10) || 0);
+                  }
+                }}
+                disabled={false}
+                maxLength={window.innerWidth < 640 ? 3 : 6}
+                className={`w-12 sm:w-20 text-xs text-center border-0 bg-transparent focus:outline-none ${
+                  theme === 'dark'
+                    ? 'text-gray-300'
+                    : 'text-gray-700'
+                }`}
+                placeholder="Seed"
+              />
 
               {/* Queue Button - Always available when assets are loaded */}
               {modelUrl && referenceImageUrl && (

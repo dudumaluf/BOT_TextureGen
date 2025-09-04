@@ -54,7 +54,7 @@ export default function ScenePanel({ isOpen, onClose }: ScenePanelProps) {
       initial={{ x: -320, opacity: 0 }}
       animate={{ x: isOpen ? 0 : -320, opacity: isOpen ? 1 : 0 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
-      className={`absolute top-0 left-0 bottom-0 w-72 z-20 pointer-events-auto ${
+      className={`absolute top-0 left-0 bottom-0 w-full sm:w-72 z-20 pointer-events-auto ${
         theme === 'dark' 
           ? 'bg-gray-900/95 border-r border-gray-700' 
           : 'bg-white border-r border-gray-200'
@@ -70,7 +70,7 @@ export default function ScenePanel({ isOpen, onClose }: ScenePanelProps) {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={onClose}
-            className={`p-1 rounded-full transition-colors ${
+            className={`hidden sm:block p-1 rounded-full transition-colors ${
               theme === 'dark' 
                 ? 'hover:bg-gray-700 text-gray-400' 
                 : 'hover:bg-gray-100 text-gray-500'

@@ -64,9 +64,9 @@ export default function SettingsModal() {
   const router = useRouter();
 
   const tabs = [
-    { id: 'models', label: 'AI Models', icon: Settings },
-    { id: 'styles', label: 'Style Templates', icon: Palette },
-    { id: 'appearance', label: 'Appearance', icon: Sun },
+    { id: 'models', label: 'Models', icon: Settings },
+    { id: 'styles', label: 'Styles', icon: Palette },
+    { id: 'appearance', label: 'Theme', icon: Sun },
     { id: 'advanced', label: 'Advanced', icon: Sliders }
   ] as const;
 
@@ -174,25 +174,28 @@ export default function SettingsModal() {
 
             {/* Tabs */}
             <div className={`border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
-              <nav className="flex space-x-8 px-6">
+              <nav className="flex space-x-2 sm:space-x-8 px-3 sm:px-6">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   return (
                     <motion.button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
+                      className={`flex items-center gap-1 sm:gap-2 py-4 px-2 sm:px-2 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
                         activeTab === tab.id
-                          ? 'border-blue-500 text-blue-600'
+                          ? theme === 'dark'
+                            ? 'border-gray-300 text-gray-100'
+                            : 'border-gray-700 text-gray-900'
                           : theme === 'dark'
-                            ? 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            ? 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-400'
                       }`}
                       whileHover={{ y: -1 }}
                       whileTap={{ y: 0 }}
                     >
-                      <Icon className="h-4 w-4" />
-                      {tab.label}
+                      <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">{tab.label}</span>
+                      <span className="sm:hidden">{tab.label}</span>
                     </motion.button>
                   );
                 })}
@@ -474,7 +477,11 @@ export default function SettingsModal() {
                             <div className="flex items-center gap-3">
                               <span className={`font-semibold text-base capitalize ${theme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>{key}</span>
                               {selectedStyle === key && (
-                                <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                  theme === 'dark' 
+                                    ? 'bg-gray-700 text-gray-300' 
+                                    : 'bg-gray-200 text-gray-700'
+                                }`}>
                                   Active
                                 </span>
                               )}
@@ -484,29 +491,29 @@ export default function SettingsModal() {
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => setEditingStyle(editingStyle === key ? null : key)}
-                                className={`p-2 rounded-lg transition-colors ${
+                                className={`p-1.5 rounded-lg transition-colors ${
                                   theme === 'dark'
-                                    ? 'text-gray-400 hover:text-blue-400 hover:bg-blue-900/30'
-                                    : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
+                                    ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700'
+                                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                                 }`}
                                 title="Edit template"
                               >
-                                <Settings className="h-4 w-4" />
+                                <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
                               </motion.button>
-                              <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => setSelectedStyle(key)}
-                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                                  selectedStyle === key 
-                                    ? 'bg-blue-500 text-white shadow-md' 
-                                    : theme === 'dark'
+                              {selectedStyle !== key && (
+                                <motion.button
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() => setSelectedStyle(key)}
+                                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                                    theme === 'dark'
                                       ? 'bg-gray-700 text-gray-200 hover:bg-gray-600 border border-gray-600'
                                       : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-                                }`}
-                              >
-                                {selectedStyle === key ? 'Active' : 'Select'}
-                              </motion.button>
+                                  }`}
+                                >
+                                  Select
+                                </motion.button>
+                              )}
                               {!['photorealistic', 'stylized', 'vintage', 'industrial', 'artistic'].includes(key) && (
                                 <motion.button
                                   whileHover={{ scale: 1.05 }}

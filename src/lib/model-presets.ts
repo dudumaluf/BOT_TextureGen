@@ -53,8 +53,8 @@ export interface ModelPreset {
   isCustom: boolean; // true for user-created presets
 }
 
-// Default model presets
-export const defaultModelPresets: ModelPreset[] = [
+// All model presets (for future use)
+const allModelPresets: ModelPreset[] = [
   {
     id: 'standard-juggernaut',
     name: 'juggernautXL_standard',
@@ -243,6 +243,9 @@ export const defaultModelPresets: ModelPreset[] = [
     isCustom: false
   }
 ];
+
+// Default model presets - filtered to show only Standard Juggernaut for now
+export const defaultModelPresets: ModelPreset[] = allModelPresets.filter(preset => preset.id === 'standard-juggernaut');
 
 // Workflow node mappings for parameter injection
 export const workflowNodeMappings = {

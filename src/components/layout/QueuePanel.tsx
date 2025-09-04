@@ -520,7 +520,7 @@ export default function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
       }`}>
         <div className="flex items-center gap-2">
           <h3 className={`font-semibold ${theme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}>
-            {isAdminMode ? 'Admin Queue' : 'Processing Queue'} ({queueCount})
+            {isAdminMode ? 'Queue' : 'Processing Queue'} ({queueCount})
           </h3>
           {isAdminMode && (
             <div className="px-2 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
@@ -532,7 +532,7 @@ export default function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={onClose}
-          className={`p-1 rounded-full transition-colors ${
+          className={`hidden sm:block p-1 rounded-full transition-colors ${
             theme === 'dark' 
               ? 'hover:bg-gray-700 text-gray-400' 
               : 'hover:bg-gray-100 text-gray-500'
@@ -591,6 +591,14 @@ export default function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
                   <motion.div
                     animate={isLoadingQueue ? { rotate: 360 } : {}}
                     transition={{ duration: 1, repeat: isLoadingQueue ? Infinity : 0, ease: "linear" }}
+                    style={{ 
+                      transformOrigin: 'center center',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '16px',
+                      height: '16px'
+                    }}
                   >
                     <RotateCcw className="h-4 w-4" />
                   </motion.div>

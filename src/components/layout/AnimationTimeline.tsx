@@ -174,31 +174,23 @@ export default function AnimationTimeline({ isQueueOpen = false, isSceneOpen = f
     }
   };
 
-  // Calculate position to match the prompt panel width (excluding upload squares)
+  // Calculate position - mobile-first responsive design
   const getPlayerPosition = () => {
-    const { isGalleryOpen } = useAppStore.getState();
-    
-    // Match the BottomControlBar's exact positioning system with responsive centering
-    let leftOffset = 80; // Base clearance from left edge
-    let rightOffset = 80; // Base clearance from right edge
-    
-    // Account for open panels (same as BottomControlBar and AssetPreview)
-    if (isGalleryOpen || isSceneOpen) leftOffset = 288; // Gallery/Scene panel width
-    if (isQueueOpen) rightOffset = 320; // Queue panel width
-    
-    // Calculate bottom position - place above the prompt panel
+    // Calculate bottom position - place above the prompt panel (moved higher)
     let bottomPosition;
     if (isBottomBarOpen) {
-      const totalOffset = 32 + promptPanelHeight + 30; // Gap above prompt panel
+      const totalOffset = 32 + promptPanelHeight + 50; // Increased gap above prompt panel
       bottomPosition = `${totalOffset}px`;
     } else {
-      bottomPosition = '80px';
+      // Mobile: Higher position to avoid clashing with side toggles, Desktop: normal position
+      bottomPosition = window.innerWidth < 640 ? '140px' : '100px';
     }
     
     return { 
       bottom: bottomPosition,
-      left: `${leftOffset}px`,
-      right: `${rightOffset}px`,
+      // Mobile: Full width with padding, Desktop: Fixed like prompt panel
+      left: window.innerWidth < 640 ? '16px' : '8px',
+      right: window.innerWidth < 640 ? '16px' : '8px',
       transform: 'none'
     };
   };
@@ -226,27 +218,43 @@ export default function AnimationTimeline({ isQueueOpen = false, isSceneOpen = f
           showTimeline();
         }}
       >
-        {/* Match BottomControlBar's container structure */}
-        <div className="flex items-center gap-2 sm:gap-4 w-full min-w-0 max-w-4xl mx-auto px-3 sm:px-6">
-          {/* Spacer for upload panels: 64px width + 16px gap = 80px */}
-          <div className="w-20 flex-shrink-0"></div>
-          
-          {/* Timeline container matching prompt panel (flex-1) - no background */}
-          <div className="flex-1">
-            <div className="flex items-center gap-4">
+        {/* Mobile-first responsive container */}
+        <div className="w-full">
+          {/* Mobile: Full width centered, Desktop: Match prompt panel structure */}
+          <div className={`flex items-center w-full ${
+            window.innerWidth < 640 
+              ? 'justify-center gap-2 px-2' // Mobile: centered with tight spacing
+              : 'gap-4 max-w-4xl mx-auto px-6' // Desktop: match prompt panel
+          }`}>
+            
+            {/* Desktop spacer for upload panels (only on desktop) */}
+            {window.innerWidth >= 640 && <div className="w-20 flex-shrink-0"></div>}
+            
+            {/* Timeline controls container */}
+            <div className={`flex items-center ${
+              window.innerWidth < 640 
+                ? 'gap-2 flex-1 justify-center' // Mobile: centered, full width
+                : 'gap-4 flex-1' // Desktop: normal spacing
+            }`}>
             {/* Play/Pause Button */}
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={handlePlayPause}
-              className={`p-2 rounded-full transition-colors ${
+              className={`${
+                window.innerWidth < 640 ? 'p-1.5' : 'p-2'
+              } rounded-full transition-colors ${
                 isAnimationPlaying
                   ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30'
                   : 'bg-green-500/20 text-green-500 hover:bg-green-500/30'
               }`}
               title={isAnimationPlaying ? 'Pause' : 'Play'}
             >
-              {isAnimationPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              {isAnimationPlaying ? (
+                <Pause className={window.innerWidth < 640 ? "h-3 w-3" : "h-4 w-4"} />
+              ) : (
+                <Play className={window.innerWidth < 640 ? "h-3 w-3" : "h-4 w-4"} />
+              )}
             </motion.button>
 
             {/* Speed Control */}
@@ -254,7 +262,9 @@ export default function AnimationTimeline({ isQueueOpen = false, isSceneOpen = f
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={handleSpeedChange}
-              className={`px-2 py-1 rounded-lg text-xs font-mono backdrop-blur-sm border transition-all ${
+              className={`${
+                window.innerWidth < 640 ? 'px-1.5 py-0.5 text-xs' : 'px-2 py-1 text-xs'
+              } rounded-lg font-mono backdrop-blur-sm border transition-all ${
                 theme === 'dark'
                   ? 'bg-gray-800/90 border-gray-700 text-gray-200 hover:bg-gray-700/90'
                   : 'bg-white/90 border-gray-200 text-gray-800 hover:bg-gray-50/90'
@@ -265,9 +275,11 @@ export default function AnimationTimeline({ isQueueOpen = false, isSceneOpen = f
             </motion.button>
 
             {/* Timeline */}
-            <div className="flex-1 flex items-center gap-3">
-              {/* Animation Selector (if multiple) */}
-              {animationNames.length > 1 && (
+            <div className={`flex-1 flex items-center ${
+              window.innerWidth < 640 ? 'gap-2' : 'gap-3'
+            }`}>
+              {/* Animation Selector (if multiple) - Hide on mobile if too cramped */}
+              {animationNames.length > 1 && window.innerWidth >= 640 && (
                 <select
                   value={currentAnimation || ''}
                   onChange={(e) => handleAnimationChange(e.target.value)}
@@ -296,7 +308,9 @@ export default function AnimationTimeline({ isQueueOpen = false, isSceneOpen = f
               <div className="flex-1 relative">
                 <div
                   ref={timelineRef}
-                  className={`relative h-1 rounded-full cursor-pointer ${
+                  className={`relative ${
+                    window.innerWidth < 640 ? 'h-2' : 'h-1'
+                  } rounded-full cursor-pointer ${
                     theme === 'dark' ? 'bg-gray-700' : 'bg-gray-300'
                   }`}
                   onClick={handleTimelineClick}
@@ -310,20 +324,26 @@ export default function AnimationTimeline({ isQueueOpen = false, isSceneOpen = f
                     style={{ width: `${animationTime * 100}%` }}
                   />
                   
-                  {/* Playhead */}
+                  {/* Playhead - Larger on mobile for better touch interaction */}
                   <div
-                    className="absolute top-1/2 transform -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg border-2 border-blue-500"
-                    style={{ left: `calc(${animationTime * 100}% - 6px)` }}
+                    className={`absolute top-1/2 transform -translate-y-1/2 ${
+                      window.innerWidth < 640 ? 'w-4 h-4' : 'w-3 h-3'
+                    } bg-white rounded-full shadow-lg border-2 border-blue-500`}
+                    style={{ 
+                      left: `calc(${animationTime * 100}% - ${window.innerWidth < 640 ? '8px' : '6px'})` 
+                    }}
                   />
                 </div>
               </div>
 
-              {/* Time Display */}
-              <div className={`text-xs font-mono tabular-nums ${
-                theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-              }`}>
-                {Math.floor(animationTime * animationDuration * 30)}/{Math.floor(animationDuration * 30)}
-              </div>
+              {/* Time Display - Hide on mobile if too cramped */}
+              {window.innerWidth >= 640 && (
+                <div className={`text-xs font-mono tabular-nums ${
+                  theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                }`}>
+                  {Math.floor(animationTime * animationDuration * 30)}/{Math.floor(animationDuration * 30)}
+                </div>
+              )}
             </div>
 
                       </div>

@@ -217,19 +217,11 @@ export default function GalleryPanel() {
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setIsSelectionMode(true)}
                   className="p-1.5 rounded-md text-gray-600 hover:bg-gray-100 transition-colors"
-                  title="Multi-select"
+                  title="Multi-select to delete items"
                 >
                   <CheckSquare className="h-4 w-4" />
                 </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={deleteAll}
-                  className="p-1.5 rounded-md text-red-600 hover:bg-red-100 transition-colors"
-                  title="Delete All"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </motion.button>
+                {/* Delete All button removed - only show delete when items are selected */}
               </div>
 
               {/* Grid Size Toggle */}
@@ -258,7 +250,7 @@ export default function GalleryPanel() {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={toggleGallery}
-            className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+            className="hidden sm:block p-1 rounded-full hover:bg-gray-100 transition-colors"
           >
             <X className="h-4 w-4 text-gray-500" />
           </motion.button>
