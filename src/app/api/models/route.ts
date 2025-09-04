@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
 
+interface ModelInfo {
+  path: string;
+  name: string;
+  displayName: string;
+  category: 'lightning' | 'turbo' | 'standard' | 'artistic';
+}
+
 // API route to fetch available models from ComfyUI
 export async function GET() {
   try {
@@ -23,7 +30,7 @@ export async function GET() {
     const checkpoints = data?.input?.required?.ckpt_name?.[0] || [];
     
     // Filter and categorize models
-    const models = checkpoints.map((modelPath: string) => {
+    const models: ModelInfo[] = checkpoints.map((modelPath: string): ModelInfo => {
       const fileName = modelPath.split(/[\\\/]/).pop() || modelPath;
       const name = fileName.replace('.safetensors', '').replace('.ckpt', '');
       
@@ -43,7 +50,7 @@ export async function GET() {
 
     return NextResponse.json({ 
       success: true, 
-      models: models.sort((a, b) => a.displayName.localeCompare(b.displayName))
+      models: models.sort((a: ModelInfo, b: ModelInfo) => a.displayName.localeCompare(b.displayName))
     });
 
   } catch (error: unknown) {
