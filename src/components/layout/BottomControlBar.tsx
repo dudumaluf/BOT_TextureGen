@@ -742,8 +742,16 @@ export default function BottomControlBar() {
               <Input 
                 type="number" 
                 value={seed} 
-                onChange={(e) => setSeed(parseInt(e.target.value, 10))}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Limit to 3 digits on mobile, 6 on desktop
+                  const maxLength = window.innerWidth < 640 ? 3 : 6;
+                  if (value.length <= maxLength) {
+                    setSeed(parseInt(value, 10) || 0);
+                  }
+                }}
                 disabled={false}
+                maxLength={window.innerWidth < 640 ? 3 : 6}
                 className={`w-12 sm:w-20 text-xs text-center border-0 bg-transparent focus:outline-none ${
                   theme === 'dark'
                     ? 'text-gray-300'
@@ -753,24 +761,40 @@ export default function BottomControlBar() {
               />
 
               {/* View Angle Selection */}
-              <select
-                value={viewAngle}
-                onChange={(e) => setViewAngle(parseInt(e.target.value, 10))}
+              <button
+                onClick={() => {
+                  const views = [
+                    { value: 1, label: 'Front' },
+                    { value: 2, label: 'Side' },
+                    { value: 3, label: 'Back' },
+                    { value: 4, label: 'Side' },
+                    { value: 5, label: 'Top' },
+                    { value: 6, label: 'Bottom' }
+                  ];
+                  const currentIndex = views.findIndex(v => v.value === viewAngle);
+                  const nextIndex = (currentIndex + 1) % views.length;
+                  setViewAngle(views[nextIndex].value);
+                }}
                 disabled={false}
-                className={`w-12 sm:w-20 text-xs text-center border-0 bg-transparent focus:outline-none cursor-pointer ${
+                className={`w-12 sm:w-20 text-xs text-center cursor-pointer transition-all duration-200 ease-out ${
                   theme === 'dark'
-                    ? 'text-gray-300'
-                    : 'text-gray-700'
+                    ? 'text-gray-300 hover:text-white'
+                    : 'text-gray-700 hover:text-gray-900'
                 }`}
-                title="Select view angle for depth map generation. For T-pose models: V1=Front, V3=Back, V2/V4=Sides"
+                title="Click to cycle through view angles for depth map generation"
               >
-                <option value={1}>V1 Front</option>
-                <option value={2}>V2 Side</option>
-                <option value={3}>V3 Back</option>
-                <option value={4}>V4 Side</option>
-                <option value={5}>V5 Top</option>
-                <option value={6}>V6 Bottom</option>
-              </select>
+                {(() => {
+                  const viewLabels = {
+                    1: 'Front',
+                    2: 'Side',
+                    3: 'Back',
+                    4: 'Side',
+                    5: 'Top',
+                    6: 'Bottom'
+                  };
+                  return viewLabels[viewAngle as keyof typeof viewLabels] || 'Front';
+                })()}
+              </button>
             </div>
 
             {/* Right: Minimalist Actions */}

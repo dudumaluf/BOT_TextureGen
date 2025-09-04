@@ -68,7 +68,7 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={onClose}
-            className={`absolute -top-1 -right-1 p-1 rounded-full transition-colors z-10 shadow-sm border ${
+            className={`absolute -top-1 -right-1 p-1.5 rounded-full transition-colors z-10 shadow-sm border flex items-center justify-center ${
               theme === 'dark'
                 ? 'bg-gray-900 hover:bg-gray-800 border-gray-700 text-gray-400'
                 : 'bg-white/90 hover:bg-gray-100 border-gray-200 text-gray-400'

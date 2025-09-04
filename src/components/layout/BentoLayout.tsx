@@ -114,7 +114,7 @@ export default function BentoLayout() {
                   {/* Asset Preview - Dynamically Centered */}
           {hasContent && isPreviewOpen && (
             <div 
-              className="absolute top-12 sm:top-16 pointer-events-auto transition-all duration-300 ease-out"
+              className="absolute top-20 sm:top-24 pointer-events-auto transition-all duration-300 ease-out"
               style={{
                 left: (isGalleryOpen || isSceneOpen) ? '272px' : '16px', // More clearance from edges
                 right: showQueuePanel ? '272px' : '16px', // More clearance from edges
@@ -156,7 +156,7 @@ export default function BentoLayout() {
         </motion.div>
 
         {/* Gallery Toggle - Center Left */}
-        {!isGalleryOpen && !isSceneOpen && (
+        {!isGalleryOpen && (
           <motion.button
             initial={{ x: -50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
@@ -175,7 +175,7 @@ export default function BentoLayout() {
         )}
 
         {/* Scene Settings Toggle - Underneath Gallery on Mobile, Bottom Left on Desktop */}
-        {!isSceneOpen && !isGalleryOpen && (
+        {!isSceneOpen && (
           <motion.button
             initial={{ x: -50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}

@@ -105,7 +105,7 @@ export default function ReferenceThumbnail() {
       onWheel={handleWheel}
     >
       <motion.div
-        className={`relative w-12 h-12 rounded-lg overflow-hidden border-2 border-white shadow-lg transition-all ${
+        className={`relative w-full h-full rounded-lg overflow-hidden border-2 border-white shadow-lg transition-all ${
           isDragging ? 'cursor-ns-resize' : 'cursor-pointer'
         }`}
         onMouseDown={handleMouseDown}
