@@ -155,25 +155,6 @@ export default function BentoLayout() {
           />
         </motion.div>
 
-        {/* Scene Settings Toggle - Bottom Left Corner */}
-        {!isSceneOpen && !isGalleryOpen && (
-          <motion.button
-            initial={{ x: -50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => {
-              setIsSceneOpen(true);
-              // Close gallery if open
-              if (isGalleryOpen) toggleGallery();
-            }}
-            className={`absolute bottom-4 left-2 sm:bottom-4 sm:left-4 z-50 ${getButtonStyle('text-green-600')}`}
-            title="Scene Settings"
-          >
-            <Sliders className="h-4 w-4 sm:h-5 sm:w-5" />
-          </motion.button>
-        )}
-
         {/* Gallery Toggle - Center Left */}
         {!isGalleryOpen && !isSceneOpen && (
           <motion.button
@@ -190,6 +171,25 @@ export default function BentoLayout() {
             title="Gallery"
           >
             <Library className="h-4 w-4 sm:h-5 sm:w-5" />
+          </motion.button>
+        )}
+
+        {/* Scene Settings Toggle - Underneath Gallery on Mobile, Bottom Left on Desktop */}
+        {!isSceneOpen && !isGalleryOpen && (
+          <motion.button
+            initial={{ x: -50, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => {
+              setIsSceneOpen(true);
+              // Close gallery if open
+              if (isGalleryOpen) toggleGallery();
+            }}
+            className={`absolute top-1/2 left-2 transform translate-y-8 sm:bottom-4 sm:left-4 sm:transform-none z-50 ${getButtonStyle('text-green-600')}`}
+            title="Scene Settings"
+          >
+            <Sliders className="h-4 w-4 sm:h-5 sm:w-5" />
           </motion.button>
         )}
 
@@ -267,8 +267,9 @@ export default function BentoLayout() {
             transition={{ duration: 0.25, ease: "easeOut" }}
             className="absolute bottom-0 z-20 transition-all duration-500"
             style={{
-              left: (isGalleryOpen || isSceneOpen) ? '272px' : '8px', // Tighter mobile clearance
-              right: showQueuePanel ? '272px' : '8px', // Tighter mobile clearance
+              // Mobile: Full width with small margins
+              left: window.innerWidth < 640 ? '8px' : (isGalleryOpen || isSceneOpen) ? '272px' : '8px',
+              right: window.innerWidth < 640 ? '8px' : showQueuePanel ? '272px' : '8px',
               bottom: '20px' // Account for mobile browser UI
             }}
           >
@@ -282,8 +283,9 @@ export default function BentoLayout() {
         <div 
           className="absolute bottom-4 z-40 transition-all duration-300 ease-out pointer-events-none"
           style={{
-            left: (isGalleryOpen || isSceneOpen) ? '272px' : '8px', // Tighter mobile padding
-            right: showQueuePanel ? '272px' : '8px', // Tighter mobile padding
+            // Mobile: Full width with small margins, Desktop: Respect panels
+            left: window.innerWidth < 640 ? '8px' : (isGalleryOpen || isSceneOpen) ? '272px' : '8px',
+            right: window.innerWidth < 640 ? '8px' : showQueuePanel ? '272px' : '8px',
             display: 'flex',
             justifyContent: 'center'
           }}

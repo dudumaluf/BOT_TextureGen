@@ -583,9 +583,9 @@ export default function BottomControlBar() {
   }, [isResizing, resizeStartY, resizeStartHeight]);
 
   return (
-    <div className="flex items-center gap-2 sm:gap-4 w-full min-w-0 max-w-4xl mx-auto px-3 sm:px-6">
-      {/* Left: Stacked Asset Upload Panels */}
-      <div className="flex flex-col gap-3">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full min-w-0 max-w-4xl mx-auto px-3 sm:px-6">
+      {/* Mobile: Upload panels on top, Desktop: Left side stacked */}
+      <div className="flex flex-row justify-center gap-3 sm:flex-col sm:justify-start">
         {/* Model Upload Panel */}
         <motion.div
           initial={{ y: 50, opacity: 0 }}
@@ -661,12 +661,12 @@ export default function BottomControlBar() {
         </motion.div>
       </div>
 
-      {/* Main Prompt Panel */}
+      {/* Main Prompt Panel - Full width on mobile, flex-1 on desktop */}
       <motion.div
         initial={{ y: 50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.3, ease: "easeOut", delay: 0.2 }}
-        className="flex-1 relative"
+        className="w-full sm:flex-1 relative"
       >
         {/* Close button */}
         <motion.button
