@@ -42,7 +42,7 @@ export interface QueueItem {
   queueType: 'continuous' | 'batch'; // New field to distinguish queue types
   modelFileName: string | null;
   modelId: string | null;
-  referenceImageUrl: string;
+  referenceImageUrl: string | null;
   referenceImageName: string | null;
   mainPrompt: string;
   selectedStyle: string;
