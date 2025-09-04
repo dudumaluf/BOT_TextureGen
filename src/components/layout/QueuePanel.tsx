@@ -707,13 +707,13 @@ export default function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
                 {systemStats.devices && systemStats.devices.length > 0 && (
                   <>
                     <div className={`col-span-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                      GPU: {systemStats.devices[0].name || 'Unknown'}
+                      GPU: {systemStats.devices?.[0]?.name || 'Unknown'}
                     </div>
                     <div className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                      VRAM: {systemStats.devices[0].vram_total ? `${Math.round(systemStats.devices[0].vram_total / 1024 / 1024 / 1024)}GB` : 'Unknown'}
+                      VRAM: {systemStats.devices?.[0]?.vram_total ? `${Math.round(systemStats.devices[0].vram_total / 1024 / 1024 / 1024)}GB` : 'Unknown'}
                     </div>
                     <div className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                      Free: {systemStats.devices[0].vram_free ? `${Math.round(systemStats.devices[0].vram_free / 1024 / 1024 / 1024)}GB` : 'Unknown'}
+                      Free: {systemStats.devices?.[0]?.vram_free ? `${Math.round(systemStats.devices[0].vram_free / 1024 / 1024 / 1024)}GB` : 'Unknown'}
                     </div>
                   </>
                 )}
@@ -793,7 +793,7 @@ export default function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
                   <div className="flex items-center gap-1">
                     {(() => {
                       // ComfyUI queue items are arrays: [number, prompt_id, prompt_data, extra_data, outputs]
-                      const promptId = Array.isArray(item) ? item[1] : (item.prompt_id || (item as any).id || (item as any).promptId);
+                      const promptId = Array.isArray(item) ? item[1] : (item.prompt_id || item.id || item.promptId);
                       const canStop = isAdminMode || userPromptIds.has(promptId || '');
                       return canStop && (
                         <motion.button
@@ -854,7 +854,7 @@ export default function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
                   <div className="flex items-center gap-1">
                     {(() => {
                       // ComfyUI queue items are arrays: [number, prompt_id, prompt_data, extra_data, outputs]
-                      const promptId = Array.isArray(item) ? item[1] : (item.prompt_id || (item as any).id || (item as any).promptId);
+                      const promptId = Array.isArray(item) ? item[1] : (item.prompt_id || item.id || item.promptId);
                       const canStop = isAdminMode || userPromptIds.has(promptId || '');
                       return canStop && (
                         <motion.button

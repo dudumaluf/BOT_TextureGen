@@ -104,9 +104,10 @@ function ModelRenderer({ modelUrl }: { modelUrl: string }) {
     }
 
     const action = actions[animation.name];
+    if (!action) return; // Additional null check for TypeScript
 
     // Stop all other animations first
-    Object.values(actions).forEach((otherAction: any) => {
+    Object.values(actions).forEach((otherAction) => {
       if (otherAction !== action) {
         otherAction.stop();
         otherAction.reset();

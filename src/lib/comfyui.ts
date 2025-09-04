@@ -80,13 +80,16 @@ export async function startTextureGeneration(workflow: any): Promise<{ success: 
 }
 
 // ComfyUI Queue Management Functions
-export interface ComfyUIQueueItem {
+// ComfyUI returns queue items as arrays: [number, prompt_id, prompt_data, extra_data, outputs]
+export type ComfyUIQueueItem = [number, string, any, any, string[]] | {
   prompt_id: string;
   number: number;
   prompt: any;
   extra_data: any;
   outputs_to_execute: string[];
-}
+  id?: string;
+  promptId?: string;
+};
 
 export interface ComfyUIQueueStatus {
   exec_info: {
