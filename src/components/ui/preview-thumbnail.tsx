@@ -18,7 +18,7 @@ export default function PreviewThumbnail({
   src, 
   alt, 
   title, 
-  size = 50, // Smaller default for mobile
+  size = 40, // Even smaller default for mobile
   onPreview,
   className = "" 
 }: PreviewThumbnailProps) {
@@ -45,7 +45,7 @@ export default function PreviewThumbnail({
 
   return (
     <div className="text-center">
-      <p className="text-xs font-medium mb-1 text-gray-600">{title}</p>
+      <p className="hidden sm:block text-xs font-medium mb-1 text-gray-600">{title}</p>
       <div 
         className={`relative overflow-hidden rounded cursor-pointer group ${className}`}
         style={{ 

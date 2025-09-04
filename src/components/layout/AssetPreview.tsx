@@ -56,12 +56,12 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
   }
 
   return (
-    <div className={`backdrop-blur-md rounded-xl border shadow-lg max-w-full overflow-x-auto ${
+    <div className={`backdrop-blur-md rounded-lg sm:rounded-xl border shadow-lg max-w-full overflow-x-auto ${
       theme === 'dark' 
         ? 'bg-gray-900/95 border-gray-700' 
         : 'bg-white/95 border-white/20'
     }`}>
-      <div className="p-2 sm:p-3">
+      <div className="p-1 sm:p-3">
         {/* Close button */}
         {onClose && (
           <motion.button
@@ -77,7 +77,7 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
             <X className="h-3 w-3" />
           </motion.button>
         )}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1 sm:gap-3">
             {referenceImageUrl && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
@@ -86,8 +86,8 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
                 className="text-center"
               >
                 <div className="text-center">
-                  <p className="text-xs font-medium mb-1 text-gray-600">Ref</p>
-                  <div className="relative w-[50px] h-[50px] sm:w-[60px] sm:h-[60px] overflow-hidden rounded">
+                  <p className="hidden sm:block text-xs font-medium mb-1 text-gray-600">Ref</p>
+                  <div className="relative w-[40px] h-[40px] sm:w-[60px] sm:h-[60px] overflow-hidden rounded">
                     <Image 
                       src={referenceImageUrl} 
                       alt="Reference" 
@@ -109,6 +109,7 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
                   src={generatedTextures.depth_preview}
                   alt="Depth Preview"
                   title="Depth"
+                  size={40} // Smaller on mobile
                   onPreview={() => openPreview(generatedTextures.depth_preview!, "Depth Map", "Depth Preview")}
                 />
               </motion.div>
@@ -123,6 +124,7 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
                   src={generatedTextures.front_preview}
                   alt="Front Preview"
                   title="Preview"
+                  size={40} // Smaller on mobile
                   onPreview={() => openPreview(generatedTextures.front_preview!, "View Preview", "Front Preview")}
                 />
               </motion.div>
@@ -137,6 +139,7 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
                   src={generatedTextures.thumbnail}
                   alt="Multiview Preview"
                   title="Multiview"
+                  size={40} // Smaller on mobile
                   onPreview={() => openPreview(generatedTextures.thumbnail!, "Multiview Preview", "Multiview Preview")}
                 />
               </motion.div>
@@ -151,6 +154,7 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
                   src={generatedTextures.diffuse}
                   alt="Diffuse Texture"
                   title="Diffuse"
+                  size={40} // Smaller on mobile
                   onPreview={() => openPreview(generatedTextures.diffuse!, "Diffuse Texture", "Diffuse Texture")}
                 />
               </motion.div>
@@ -165,6 +169,7 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
                   src={generatedTextures.normal}
                   alt="Normal Texture"
                   title="Normal"
+                  size={40} // Smaller on mobile
                   onPreview={() => openPreview(generatedTextures.normal!, "Normal Map", "Normal Texture")}
                 />
               </motion.div>
@@ -179,6 +184,7 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
                   src={generatedTextures.height}
                   alt="Height Texture"
                   title="Height"
+                  size={40} // Smaller on mobile
                   onPreview={() => openPreview(generatedTextures.height!, "Height Map", "Height Texture")}
                 />
               </motion.div>

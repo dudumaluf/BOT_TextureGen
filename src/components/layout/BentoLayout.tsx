@@ -114,10 +114,10 @@ export default function BentoLayout() {
                   {/* Asset Preview - Dynamically Centered */}
           {hasContent && isPreviewOpen && (
             <div 
-              className="absolute top-4 sm:top-6 pointer-events-auto transition-all duration-300 ease-out"
+              className="absolute top-12 sm:top-16 pointer-events-auto transition-all duration-300 ease-out"
               style={{
-                left: (isGalleryOpen || isSceneOpen) ? '272px' : '8px', // Tighter mobile padding
-                right: showQueuePanel ? '272px' : '8px', // Tighter mobile padding
+                left: (isGalleryOpen || isSceneOpen) ? '272px' : '16px', // More clearance from edges
+                right: showQueuePanel ? '272px' : '16px', // More clearance from edges
                 display: 'flex',
                 justifyContent: 'center'
               }}
@@ -174,7 +174,7 @@ export default function BentoLayout() {
           </motion.button>
         )}
 
-        {/* Gallery Toggle - Top Left Corner */}
+        {/* Gallery Toggle - Center Left */}
         {!isGalleryOpen && !isSceneOpen && (
           <motion.button
             initial={{ x: -50, opacity: 0 }}
@@ -186,7 +186,7 @@ export default function BentoLayout() {
               // Close scene panel if open
               if (isSceneOpen) setIsSceneOpen(false);
             }}
-            className={`absolute top-2 left-2 sm:top-4 sm:left-4 z-50 ${getButtonStyle('text-blue-600')}`}
+            className={`absolute top-1/2 left-2 sm:left-4 transform -translate-y-1/2 z-50 ${getButtonStyle('text-blue-600')}`}
             title="Gallery"
           >
             <Library className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -269,7 +269,7 @@ export default function BentoLayout() {
             style={{
               left: (isGalleryOpen || isSceneOpen) ? '272px' : '8px', // Tighter mobile clearance
               right: showQueuePanel ? '272px' : '8px', // Tighter mobile clearance
-              bottom: '8px' // Minimal bottom margin for mobile
+              bottom: '16px' // More clearance from bottom for mobile
             }}
           >
             <BottomControlBar />
