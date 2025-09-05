@@ -60,6 +60,54 @@ export default function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
     }
   };
 
+  // Mark generation as cancelled in database when ComfyUI job is stopped/deleted
+  const markGenerationAsCancelled = async (promptId: string) => {
+    try {
+      const supabase = createClient();
+      
+      // Find the generation with this ComfyUI prompt ID
+      const { data: generation, error: findError } = await supabase
+        .from('generations')
+        .select('id')
+        .eq('comfyui_prompt_id', promptId)
+        .eq('status', 'processing')
+        .single();
+      
+      if (findError || !generation) {
+        console.log(`No processing generation found for ComfyUI prompt ${promptId}`);
+        return;
+      }
+      
+      // Update the generation status to cancelled
+      const { error: updateError } = await supabase
+        .from('generations')
+        .update({ 
+          status: 'failed',
+          error_message: 'Generation cancelled by user'
+        })
+        .eq('id', generation.id);
+      
+      if (updateError) {
+        console.error('Error marking generation as cancelled:', updateError);
+      } else {
+        console.log(`Marked generation ${generation.id} as cancelled`);
+        
+        // Refresh gallery to remove the cancelled generation from processing view
+        const { data: updatedGenerations } = await supabase
+          .from('generations')
+          .select('*, model:models(*)')
+          .order('created_at', { ascending: false })
+          .limit(50);
+        
+        if (updatedGenerations) {
+          setGenerations(updatedGenerations);
+        }
+      }
+    } catch (error) {
+      console.error('Error in markGenerationAsCancelled:', error);
+    }
+  };
+
   // Fetch user's prompt IDs to determine which ComfyUI jobs they can control
   const fetchUserPromptIds = async () => {
     try {
@@ -164,6 +212,9 @@ export default function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
         if (data.success) {
           notify.success(isUserJob ? 'Your running job has been stopped' : 'Running job interrupted');
           
+          // Mark corresponding database generation as cancelled
+          await markGenerationAsCancelled(promptId);
+          
           // Reset app processing state when stopping individual jobs
           setIsLoading(false);
           setIsProcessingQueue(false);
@@ -183,6 +234,9 @@ export default function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
         const data = await response.json();
         if (data.success) {
           notify.success(isUserJob ? 'Your queued job has been removed' : 'Queued job removed');
+          
+          // Mark corresponding database generation as cancelled
+          await markGenerationAsCancelled(promptId);
           
           // Check if this was the last job and reset processing state if needed
           const remainingRunning = comfyUIQueue?.queue_running?.length || 0;

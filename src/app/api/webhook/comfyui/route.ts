@@ -258,7 +258,31 @@ export async function POST(request: Request) {
 
     if (!updateResult || updateResult.length === 0) {
       console.error("Webhook: No rows updated - generation may not exist", { generationId });
-      return NextResponse.json({ success: false, error: "Generation not found or could not be updated." }, { status: 404 });
+      
+      // Check if generation exists at all
+      const { data: existingGen, error: checkError } = await supabase
+        .from('generations')
+        .select('id, status, user_id')
+        .eq('id', generationId)
+        .single();
+      
+      if (checkError || !existingGen) {
+        console.error("Webhook: Generation does not exist in database", { generationId, checkError });
+        return NextResponse.json({ 
+          success: false, 
+          error: "Generation not found in database. This generation may have failed to create properly." 
+        }, { status: 404 });
+      } else {
+        console.error("Webhook: Generation exists but update failed", { 
+          generationId, 
+          existingStatus: existingGen.status,
+          userId: existingGen.user_id 
+        });
+        return NextResponse.json({ 
+          success: false, 
+          error: "Generation exists but could not be updated. Check permissions." 
+        }, { status: 500 });
+      }
     }
 
     console.log(`Webhook: Successfully updated generation ${generationId}`, {

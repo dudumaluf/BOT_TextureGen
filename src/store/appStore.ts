@@ -33,6 +33,7 @@ export interface GenerationRecord {
   created_at?: string;
   model_id?: string;
   user_id?: string;
+  error_message?: string; // Error message when generation fails
   model?: ModelRecord; // Relational data from Supabase joins
 }
 

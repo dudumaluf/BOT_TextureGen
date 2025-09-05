@@ -62,7 +62,7 @@ export interface GenerationRow {
   depth_preview_storage_path?: string;
   front_preview_storage_path?: string;
   comfyui_prompt_id?: string;
-  error_message?: string;
+  error_message?: string; // Error message when generation fails or is cancelled
   created_at: string;
 }
 

@@ -284,6 +284,49 @@ export default function GalleryPanel() {
     fetchGenerations();
   }, [setGenerations, supabase]);
 
+  // Real-time subscription for generation updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('generations-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all changes (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'generations'
+        },
+        async (payload) => {
+          console.log('Real-time: Generation change detected', payload);
+          
+          // Add a small delay to ensure database consistency after webhook updates
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Refresh the entire generations list to ensure consistency
+          const { data, error } = await supabase
+            .from('generations')
+            .select('*, model:models(*)')
+            .order('created_at', { ascending: false }) as { data: GenerationRecord[] | null, error: any };
+          
+          if (!error && data) {
+            setGenerations(data);
+            console.log(`Real-time: Updated gallery with ${data.length} generations`, {
+              recentCompleted: data.filter(g => g.status === 'completed').slice(0, 3).map(g => ({ 
+                id: g.id, 
+                hasTextures: !!g.diffuse_storage_path 
+              }))
+            });
+          } else if (error) {
+            console.error('Real-time: Error fetching updated generations:', error);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, setGenerations]);
+
   return (
     <div className="h-full flex flex-col">
       {/* Header with Controls */}

@@ -40,11 +40,17 @@ export async function POST(request: Request) {
       .select('id')
       .single();
 
-    if (dbError) {
+    if (dbError || !generationRecord) {
       console.error("Database error creating generation:", dbError);
-      throw dbError;
+      console.error("Generation record:", generationRecord);
+      throw dbError || new Error("Failed to create generation record");
     }
     const generationId = generationRecord.id;
+
+    if (!generationId) {
+      console.error("Generation ID is null or undefined:", generationRecord);
+      throw new Error("Generated record missing ID");
+    }
 
     console.log(`Generation: Created new generation ${generationId}`, {
       userId: session.user.id,
@@ -214,7 +220,7 @@ export async function POST(request: Request) {
         .from('generations')
         .update({ 
           status: 'failed', 
-          error_message: comfyError.message
+          error_message: comfyError.message || 'Failed to queue generation with ComfyUI'
         })
         .eq('id', generationId);
 

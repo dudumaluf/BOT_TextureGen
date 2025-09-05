@@ -72,6 +72,7 @@ export default function BottomControlBar() {
   const supabase = createClient();
   const router = useRouter();
   const [currentGenerationId, setCurrentGenerationId] = useState<string | null>(null);
+  const [activeGenerations, setActiveGenerations] = useState<Set<string>>(new Set());
   const [isExpanded, setIsExpanded] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [resizeStartY, setResizeStartY] = useState(0);
@@ -81,148 +82,205 @@ export default function BottomControlBar() {
   const minHeight = 140; // Keep desktop minimum at 140px
   const maxHeight = 400;
 
-  // Copy the polling logic from the old ControlPanel
+  // Multi-generation tracking system with real-time updates
   useEffect(() => {
     let pollInterval: NodeJS.Timeout;
     
-    if (isLoading && currentGenerationId) {
-      console.log(`Polling: Starting check for generation ${currentGenerationId}`);
+    console.log(`Multi-Gen: useEffect triggered`, { 
+      isLoading, 
+      currentGenerationId, 
+      activeGenerationsCount: activeGenerations.size,
+      hasCondition: isLoading && (currentGenerationId || activeGenerations.size > 0)
+    });
+    
+    if (isLoading && (currentGenerationId || activeGenerations.size > 0)) {
+      console.log(`Multi-Gen: Starting tracking for ${activeGenerations.size} active generations`);
       
       let pollCount = 0;
       pollInterval = setInterval(async () => {
         pollCount++;
-        console.log(`Polling: Check #${pollCount} for generation ${currentGenerationId}`);
         
         try {
           // Add a small delay to avoid race conditions with webhook updates
           await new Promise(resolve => setTimeout(resolve, 100));
           
-          const { data: generation, error } = await supabase
+          // Get all processing generations for this user
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+          
+          const { data: processingGenerations, error } = await supabase
             .from('generations')
             .select('*')
-            .eq('id', currentGenerationId)
-            .single() as { data: GenerationRecord | null, error: any };
+            .eq('user_id', user.id)
+            .eq('status', 'processing')
+            .order('created_at', { ascending: false });
           
-          // Log any database errors for debugging
           if (error) {
-            console.log(`Polling: Database error for generation ${currentGenerationId}:`, error);
-          }
-          
-          // If generation was deleted, stop polling
-          if (error && (error.code === 'PGRST116' || error.message?.includes('406'))) {
-            console.log(`Polling: Generation ${currentGenerationId} was deleted, stopping polling`);
-            setIsLoading(false);
-            setCurrentGenerationId(null);
-            clearInterval(pollInterval);
+            console.error(`Multi-Gen: Database error:`, error);
             return;
           }
           
-          // Debug: Log generation status during polling
-          if (!error && generation) {
-            console.log(`Polling: Generation ${currentGenerationId} status: ${generation.status}`);
-            console.log(`Polling: Generation details:`, {
-              id: generation.id,
-              status: generation.status,
-              hasDiffuse: !!generation.diffuse_storage_path,
-              hasNormal: !!generation.normal_storage_path,
-              hasHeight: !!generation.height_storage_path,
-              hasThumbnail: !!generation.thumbnail_storage_path,
-              hasDepthPreview: !!generation.depth_preview_storage_path,
-              hasFrontPreview: !!generation.front_preview_storage_path
-            });
-            const currentTextures = useAppStore.getState().generatedTextures;
-            const hasNewDepthPreview = generation.depth_preview_storage_path && 
-              generation.depth_preview_storage_path !== currentTextures.depth_preview;
-            const hasNewFrontPreview = generation.front_preview_storage_path && 
-              generation.front_preview_storage_path !== currentTextures.front_preview;
+          console.log(`Multi-Gen: Poll #${pollCount} - Found ${processingGenerations?.length || 0} processing generations`);
+          
+          // Debug: Log all processing generation IDs
+          if (processingGenerations && processingGenerations.length > 0) {
+            console.log(`Multi-Gen: Processing generation IDs:`, processingGenerations.map((g: any) => g.id));
+          }
+          
+          // Check for completed generations
+          const { data: completedGenerations, error: completedError } = await supabase
+            .from('generations')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('status', 'completed')
+            .gte('created_at', new Date(Date.now() - 10 * 60 * 1000).toISOString()) // Last 10 minutes
+            .order('created_at', { ascending: false });
+          
+          // Debug: Log completed generations found
+          if (completedGenerations && completedGenerations.length > 0) {
+            console.log(`Multi-Gen: Found ${completedGenerations.length} completed generations:`, 
+              completedGenerations.map((g: any) => ({ id: g.id, status: g.status, hasTextures: !!g.diffuse_storage_path })));
+          }
+          
+          if (!completedError && completedGenerations && completedGenerations.length > 0) {
+            console.log(`Multi-Gen: Found ${completedGenerations.length} recently completed generations`);
             
-            // Update previews immediately when available
-            if (hasNewDepthPreview || hasNewFrontPreview) {
-              console.log(`Polling: Found early previews for ${currentGenerationId}`, {
-                depth: !!generation.depth_preview_storage_path,
-                front: !!generation.front_preview_storage_path
-              });
+            // Process the most recent completed generation
+            const latestCompleted = completedGenerations[0];
+            const currentTextures = useAppStore.getState().generatedTextures;
+            
+            // Only update if this is a new completion (different from current textures)
+            if (latestCompleted.diffuse_storage_path && 
+                latestCompleted.diffuse_storage_path !== currentTextures.diffuse) {
               
-              const updatedTextures = {
-                ...currentTextures,
-                ...(generation.depth_preview_storage_path && { depth_preview: generation.depth_preview_storage_path }),
-                ...(generation.front_preview_storage_path && { front_preview: generation.front_preview_storage_path })
+              console.log(`Multi-Gen: Applying textures from completed generation ${latestCompleted.id}`);
+              
+              const textureData = {
+                diffuse: latestCompleted.diffuse_storage_path || null,
+                normal: latestCompleted.normal_storage_path || null,
+                height: latestCompleted.height_storage_path || null,
+                thumbnail: latestCompleted.thumbnail_storage_path || null,
+                depth_preview: latestCompleted.depth_preview_storage_path || null,
+                front_preview: latestCompleted.front_preview_storage_path || null
               };
               
-              setGeneratedTextures(updatedTextures);
+              setGeneratedTextures(textureData);
+              
+              // Create or update generation pair
+              const generationPair = {
+                id: latestCompleted.id,
+                fastGeneration: latestCompleted.high_quality ? currentGeneration?.fastGeneration : latestCompleted,
+                hqGeneration: latestCompleted.high_quality ? latestCompleted : undefined,
+                canUpgrade: !latestCompleted.high_quality,
+                isUpgrading: false,
+                currentTextures: textureData
+              };
+              
+              setCurrentGeneration(generationPair);
+              
+              // Refresh gallery immediately
+              const { data: allGenerations } = await supabase
+                .from('generations')
+                .select('*, model:models(*)')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false })
+                .limit(50);
+              
+              if (allGenerations) {
+                setGenerations(allGenerations);
+                console.log(`Multi-Gen: Updated gallery with ${allGenerations.length} generations`);
+              }
+              
+              notify.success(`${latestCompleted.high_quality ? 'High Quality' : 'Fast'} generation completed!`);
             }
           }
           
-          if (!error && generation && generation.status === 'completed') {
-            console.log(`Polling: Current generation ${currentGenerationId} completed!`);
-            console.log('Generation data:', generation);
-            console.log('Setting isLoading to false...');
-            
-            const textureData = {
-              diffuse: generation.diffuse_storage_path || null,
-              normal: generation.normal_storage_path || null,
-              height: generation.height_storage_path || null,
-              thumbnail: generation.thumbnail_storage_path || null,
-              depth_preview: generation.depth_preview_storage_path || null,
-              front_preview: generation.front_preview_storage_path || null
-            };
-            
-            setGeneratedTextures(textureData);
+          // Remove completed generations from our active tracking set
+          const completedGenerationIds = new Set();
+          if (processingGenerations) {
+            for (const generation of processingGenerations) {
+              if (generation.status === 'completed') {
+                completedGenerationIds.add(generation.id);
+              }
+            }
+          }
+          
+          // Update active generations by removing completed ones
+          if (completedGenerationIds.size > 0) {
+            setActiveGenerations(prev => {
+              const newSet = new Set(prev);
+              completedGenerationIds.forEach(id => newSet.delete(id));
+              console.log(`Multi-Gen: Removed ${completedGenerationIds.size} completed generations from tracking`);
+              return newSet;
+            });
+          }
+          
+          // Only stop loading if ALL our tracked generations are done
+          // Check both database results AND our active tracking set
+          const hasActiveGenerations = activeGenerations.size > 0;
+          const hasProcessingInDB = processingGenerations && processingGenerations.length > 0;
+          
+          if (!hasActiveGenerations && !hasProcessingInDB) {
+            console.log(`Multi-Gen: All generations completed, stopping loading state`);
             setIsLoading(false);
             setCurrentGenerationId(null);
-            console.log('isLoading set to false, currentGenerationId cleared');
             
-            // Check if this was an upgrade generation
-            const wasUpgrade = generation.high_quality;
+            // Also clear any stuck processing states
+            const { setIsProcessingQueue } = useAppStore.getState();
+            setIsProcessingQueue(false);
             
-            // Create or update generation pair
-            const generationPair = {
-              id: generation.id,
-              fastGeneration: wasUpgrade ? currentGeneration?.fastGeneration : generation,
-              hqGeneration: wasUpgrade ? generation : undefined,
-              canUpgrade: !wasUpgrade, // Can only upgrade if this was a fast generation
-              isUpgrading: false, // Always clear upgrading state
-              currentTextures: textureData
-            };
-            
-            setCurrentGeneration(generationPair);
-            
-            // Refresh gallery when generation completes
-            const { data: updatedGenerations } = await supabase
-              .from('generations')
-              .select('*, model:models(*)')
-              .order('created_at', { ascending: false });
-            
-            if (updatedGenerations) {
-              setGenerations(updatedGenerations);
-            }
-            
-            if (!highQuality) {
-              notify.success("Fast textures ready! Click 'Upgrade' for maximum quality.");
-            } else {
-              notify.success("High Quality textures generated successfully!");
-            }
-            clearInterval(pollInterval);
+            console.log(`Multi-Gen: Cleared all loading and processing states`);
+            return;
           }
           
+          // Update previews for any processing generation that has them
+          if (processingGenerations) {
+            const currentTextures = useAppStore.getState().generatedTextures;
+            
+            for (const generation of processingGenerations) {
+              const hasNewDepthPreview = generation.depth_preview_storage_path && 
+                generation.depth_preview_storage_path !== currentTextures.depth_preview;
+              const hasNewFrontPreview = generation.front_preview_storage_path && 
+                generation.front_preview_storage_path !== currentTextures.front_preview;
+              
+              if (hasNewDepthPreview || hasNewFrontPreview) {
+                console.log(`Multi-Gen: Found early previews for ${generation.id}`, {
+                  depth: !!generation.depth_preview_storage_path,
+                  front: !!generation.front_preview_storage_path
+                });
+                
+                const updatedTextures = {
+                  ...currentTextures,
+                  ...(generation.depth_preview_storage_path && { depth_preview: generation.depth_preview_storage_path }),
+                  ...(generation.front_preview_storage_path && { front_preview: generation.front_preview_storage_path })
+                };
+                
+                setGeneratedTextures(updatedTextures);
+                break; // Only update once per poll
+              }
+            }
+          }
+          
+          // Log progress every minute
           if (pollCount % 4 === 0) {
             const minutes = Math.floor(pollCount / 4);
-            console.log(`Polling: Generation ${currentGenerationId} in progress... ${minutes} minute(s) elapsed`);
+            const activeCount = processingGenerations?.length || 0;
+            console.log(`Multi-Gen: ${activeCount} generations still processing... ${minutes} minute(s) elapsed`);
             if (minutes > 0 && minutes % 5 === 0) {
-              notify.info(`Generation in progress... ${minutes} minutes elapsed`);
+              notify.info(`${activeCount} generation(s) in progress... ${minutes} minutes elapsed`);
             }
           }
           
+          // Timeout after 45 minutes
           if (pollCount >= 180) {
-            console.log(`Polling: Generation ${currentGenerationId} timeout after 45 minutes`);
-            notify.error("Generation timeout after 45 minutes. Check ComfyUI status or try 'Check Latest Generation'");
+            console.log(`Multi-Gen: Timeout after 45 minutes`);
+            notify.error("Generation timeout after 45 minutes. Check ComfyUI status.");
             setIsLoading(false);
             setCurrentGenerationId(null);
-            clearInterval(pollInterval);
           }
           
         } catch (error) {
-          console.error('Polling error:', error);
+          console.error('Multi-Gen: Polling error:', error);
         }
       }, 15000);
     }
@@ -232,7 +290,7 @@ export default function BottomControlBar() {
         clearInterval(pollInterval);
       }
     };
-  }, [isLoading, currentGenerationId, supabase, setGeneratedTextures, setIsLoading, highQuality, setCurrentGeneration]);
+  }, [isLoading, currentGenerationId, activeGenerations, supabase, setGeneratedTextures, setIsLoading, setCurrentGeneration, setGenerations, notify]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -376,7 +434,13 @@ export default function BottomControlBar() {
       const result = await response.json();
       if (result.success) {
         setCurrentGenerationId(result.generationId);
+        setActiveGenerations(prev => new Set([...prev, result.generationId]));
         console.log(`Generation: Started immediate generation ${result.generationId}`);
+        console.log(`Generation: State after setting ID`, { 
+          generationId: result.generationId, 
+          isLoading, 
+          willTriggerPolling: isLoading && result.generationId 
+        });
       } else {
         throw new Error(result.error || 'Failed to start generation.');
       }
