@@ -225,10 +225,6 @@ export default function BottomControlBar() {
             setIsLoading(false);
             setCurrentGenerationId(null);
             
-            // Also clear any stuck processing states
-            const { setIsProcessingQueue } = useAppStore.getState();
-            setIsProcessingQueue(false);
-            
             console.log(`Multi-Gen: Cleared all loading and processing states`);
             return;
           }
