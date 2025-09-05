@@ -94,11 +94,19 @@ export default function BottomControlBar() {
         console.log(`Polling: Check #${pollCount} for generation ${currentGenerationId}`);
         
         try {
+          // Add a small delay to avoid race conditions with webhook updates
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
           const { data: generation, error } = await supabase
             .from('generations')
             .select('*')
             .eq('id', currentGenerationId)
             .single() as { data: GenerationRecord | null, error: any };
+          
+          // Log any database errors for debugging
+          if (error) {
+            console.log(`Polling: Database error for generation ${currentGenerationId}:`, error);
+          }
           
           // If generation was deleted, stop polling
           if (error && (error.code === 'PGRST116' || error.message?.includes('406'))) {
@@ -112,6 +120,16 @@ export default function BottomControlBar() {
           // Debug: Log generation status during polling
           if (!error && generation) {
             console.log(`Polling: Generation ${currentGenerationId} status: ${generation.status}`);
+            console.log(`Polling: Generation details:`, {
+              id: generation.id,
+              status: generation.status,
+              hasDiffuse: !!generation.diffuse_storage_path,
+              hasNormal: !!generation.normal_storage_path,
+              hasHeight: !!generation.height_storage_path,
+              hasThumbnail: !!generation.thumbnail_storage_path,
+              hasDepthPreview: !!generation.depth_preview_storage_path,
+              hasFrontPreview: !!generation.front_preview_storage_path
+            });
             const currentTextures = useAppStore.getState().generatedTextures;
             const hasNewDepthPreview = generation.depth_preview_storage_path && 
               generation.depth_preview_storage_path !== currentTextures.depth_preview;
