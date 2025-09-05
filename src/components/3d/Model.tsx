@@ -7,7 +7,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 export default function Model() {
-  const modelUrl = useAppStore((state) => state.modelUrl);
+  const modelUrl = useAppStore((state: any) => state.modelUrl);
 
   if (!modelUrl) {
     return null;
