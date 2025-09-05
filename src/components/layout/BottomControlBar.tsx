@@ -196,7 +196,7 @@ export default function BottomControlBar() {
           }
           
           // Remove completed generations from our active tracking set
-          const completedGenerationIds = new Set();
+          const completedGenerationIds = new Set<string>();
           if (processingGenerations) {
             for (const generation of processingGenerations) {
               if (generation.status === 'completed') {
@@ -209,7 +209,7 @@ export default function BottomControlBar() {
           if (completedGenerationIds.size > 0) {
             setActiveGenerations(prev => {
               const newSet = new Set(prev);
-              completedGenerationIds.forEach(id => newSet.delete(id));
+              completedGenerationIds.forEach((id: string) => newSet.delete(id));
               console.log(`Multi-Gen: Removed ${completedGenerationIds.size} completed generations from tracking`);
               return newSet;
             });
