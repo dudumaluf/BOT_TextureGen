@@ -430,7 +430,11 @@ export default function BottomControlBar() {
       const result = await response.json();
       if (result.success) {
         setCurrentGenerationId(result.generationId);
-        setActiveGenerations(prev => new Set([...prev, result.generationId]));
+        setActiveGenerations(prev => {
+          const newSet = new Set(prev);
+          newSet.add(result.generationId);
+          return newSet;
+        });
         console.log(`Generation: Started immediate generation ${result.generationId}`);
         console.log(`Generation: State after setting ID`, { 
           generationId: result.generationId, 
