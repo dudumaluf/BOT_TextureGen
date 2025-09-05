@@ -39,7 +39,7 @@ export default function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
   const [isProcessingQueue, setIsProcessingQueue] = useState(false);
 
   // Helper function to extract prompt information from ComfyUI queue items
-  const extractPromptInfo = (promptData: any) => {
+  const extractPromptInfo = (promptData: Record<string, any>) => {
     try {
       const subjectPrompt = promptData?.["606"]?.inputs?.text || '';
       const stylePrompt = promptData?.["605"]?.inputs?.text || '';

@@ -6,7 +6,7 @@ import { applyPresetToWorkflow, defaultModelPresets, getActiveModelPreset } from
 import workflow from "@/lib/workflow.json";
 
 // Deep clone the workflow to avoid mutations
-const getWorkflowCopy = () => JSON.parse(JSON.stringify(workflow));
+const getWorkflowCopy = (): Record<string, any> => JSON.parse(JSON.stringify(workflow));
 
 export async function POST(request: Request) {
   try {

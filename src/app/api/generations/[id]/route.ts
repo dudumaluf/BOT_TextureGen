@@ -19,7 +19,7 @@ export async function GET(
       .select('*')
       .eq('id', generationId)
       .eq('user_id', session.user.id)
-      .single();
+      .single() as { data: any | null, error: any };
 
     if (error) {
       if (error.code === 'PGRST116') { // PostgREST error for "Not a single row was found"

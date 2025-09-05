@@ -21,12 +21,12 @@ function ModelRenderer({ modelUrl }: { modelUrl: string }) {
   const group = useRef<THREE.Group>(null);
   const { actions, mixer } = useAnimations(animations, group);
   
-  const generatedTextures = useAppStore((state) => state.generatedTextures);
-  const materialSettings = useAppStore((state) => state.materialSettings);
-  const objectScale = useAppStore((state) => state.objectScale);
-  const objectPosition = useAppStore((state) => state.objectPosition);
-  const objectRotation = useAppStore((state) => state.objectRotation);
-  const resetCameraTrigger = useAppStore((state) => state.resetCameraTrigger);
+  const generatedTextures = useAppStore((state: any) => state.generatedTextures);
+  const materialSettings = useAppStore((state: any) => state.materialSettings);
+  const objectScale = useAppStore((state: any) => state.objectScale);
+  const objectPosition = useAppStore((state: any) => state.objectPosition);
+  const objectRotation = useAppStore((state: any) => state.objectRotation);
+  const resetCameraTrigger = useAppStore((state: any) => state.resetCameraTrigger);
   const { setCameraDistance, setObjectScale, setObjectPosition } = useAppStore();
   
   // Animation state
@@ -46,7 +46,7 @@ function ModelRenderer({ modelUrl }: { modelUrl: string }) {
     setIsAnimationPlaying,
     setAnimationDuration,
     setShowAnimationTimeline
-  } = useAppStore();
+  } = useAppStore() as any;
 
   // We'll apply textures directly to the scene since we need animations to work
 

@@ -280,7 +280,7 @@ export function getActiveModelPreset(presets: ModelPreset[]): ModelPreset | null
   return presets.find(preset => preset.isActive) || null;
 }
 
-export function applyPresetToWorkflow(workflow: any, preset: ModelPreset): any {
+export function applyPresetToWorkflow(workflow: Record<string, any>, preset: ModelPreset): Record<string, any> {
   const updatedWorkflow = JSON.parse(JSON.stringify(workflow));
   
   console.log(`Applying preset "${preset.displayName}" to workflow:`);

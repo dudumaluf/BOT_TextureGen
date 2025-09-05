@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       const supabase = createServer();
       
       try {
-        const updateData: any = {};
+        const updateData: Record<string, any> = {};
         
         // Process depth preview if available
         if (textures.depth_preview) {
@@ -122,7 +122,7 @@ export async function POST(request: Request) {
       } catch (error) {
         console.error(`Webhook: Error processing early previews:`, error);
         // Store the ComfyUI URLs as fallback
-        const fallbackData: any = {};
+        const fallbackData: Record<string, any> = {};
         if (textures.depth_preview) fallbackData.depth_preview_storage_path = textures.depth_preview;
         if (textures.front_preview) fallbackData.front_preview_storage_path = textures.front_preview;
         
@@ -169,7 +169,7 @@ export async function POST(request: Request) {
     console.log(`Webhook: Attempting to update generation ${generationId} directly`);
 
     // Update the generation with completed textures
-    const updateData: any = {
+    const updateData: Record<string, any> = {
       status: 'completed',
       // completed_at: new Date().toISOString(), // Column doesn't exist yet
     };

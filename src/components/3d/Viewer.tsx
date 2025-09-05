@@ -7,8 +7,8 @@ import { Suspense, useEffect, useRef } from "react";
 import { useAppStore } from "@/store/appStore";
 
 function CameraController() {
-  const cameraDistance = useAppStore((state) => state.cameraDistance);
-  const resetCameraTrigger = useAppStore((state) => state.resetCameraTrigger);
+  const cameraDistance = useAppStore((state: any) => state.cameraDistance);
+  const resetCameraTrigger = useAppStore((state: any) => state.resetCameraTrigger);
   const { camera } = useThree();
 
   useEffect(() => {
@@ -35,7 +35,7 @@ function CameraController() {
 }
 
 function OrbitControlsWrapper() {
-  const resetCameraTrigger = useAppStore((state) => state.resetCameraTrigger);
+  const resetCameraTrigger = useAppStore((state: any) => state.resetCameraTrigger);
   const controlsRef = useRef<any>();
 
   useEffect(() => {
@@ -50,9 +50,9 @@ function OrbitControlsWrapper() {
 }
 
 export default function Viewer() {
-  const environment = useAppStore((state) => state.environment);
-  const backgroundColor = useAppStore((state) => state.backgroundColor);
-  const showEnvironmentBackground = useAppStore((state) => state.showEnvironmentBackground);
+  const environment = useAppStore((state: any) => state.environment);
+  const backgroundColor = useAppStore((state: any) => state.backgroundColor);
+  const showEnvironmentBackground = useAppStore((state: any) => state.showEnvironmentBackground);
 
   return (
     <div className="absolute top-0 left-0 w-full h-full">

@@ -81,11 +81,11 @@ export async function startTextureGeneration(workflow: any): Promise<{ success: 
 
 // ComfyUI Queue Management Functions
 // ComfyUI returns queue items as arrays: [number, prompt_id, prompt_data, extra_data, outputs]
-export type ComfyUIQueueItem = [number, string, any, any, string[]] | {
+export type ComfyUIQueueItem = [number, string, Record<string, any>, Record<string, any>, string[]] | {
   prompt_id: string;
   number: number;
-  prompt: any;
-  extra_data: any;
+  prompt: Record<string, any>;
+  extra_data: Record<string, any>;
   outputs_to_execute: string[];
   id?: string;
   promptId?: string;
@@ -183,7 +183,7 @@ export async function interruptComfyUI(): Promise<{ success: boolean }> {
   }
 }
 
-export async function getComfyUISystemStats(): Promise<any> {
+export async function getComfyUISystemStats(): Promise<Record<string, any>> {
   if (!API_URL) {
     throw new Error("COMFYUI_API_URL environment variable is not set");
   }
@@ -200,7 +200,7 @@ export async function getComfyUISystemStats(): Promise<any> {
   }
 }
 
-export async function getComfyUIHistory(maxItems: number = 50): Promise<any> {
+export async function getComfyUIHistory(maxItems: number = 50): Promise<Record<string, any>> {
   if (!API_URL) {
     throw new Error("COMFYUI_API_URL environment variable is not set");
   }

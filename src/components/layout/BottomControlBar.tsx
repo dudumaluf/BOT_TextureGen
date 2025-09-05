@@ -249,7 +249,7 @@ export default function BottomControlBar() {
       } else {
         throw new Error(result.error || 'File upload failed');
       }
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error("Error uploading file:", error);
       notify.error(error instanceof Error ? error.message : "Failed to upload model.");
     } finally {
@@ -283,7 +283,7 @@ export default function BottomControlBar() {
       } else {
         throw new Error(result.error || 'Image upload failed');
       }
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error("Error uploading image:", error);
       notify.error(error instanceof Error ? error.message : "Failed to upload image.");
     } finally {
@@ -362,7 +362,7 @@ export default function BottomControlBar() {
       } else {
         throw new Error(result.error || 'Failed to start generation.');
       }
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error("Error starting generation:", error);
       notify.error(error instanceof Error ? error.message : "Failed to generate textures.");
       setIsLoading(false);
