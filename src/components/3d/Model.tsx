@@ -154,7 +154,7 @@ function ModelRenderer({ modelUrl }: { modelUrl: string }) {
     setCameraDistance(finalDistance);
     
     // Trigger camera update by incrementing the reset trigger
-    useAppStore.setState((state) => ({ 
+    useAppStore.setState((state: any) => ({ 
       resetCameraTrigger: state.resetCameraTrigger + 1 
     }));
     
@@ -175,7 +175,7 @@ function ModelRenderer({ modelUrl }: { modelUrl: string }) {
     setCameraDistance(5);
     
     // Trigger camera update by incrementing the reset trigger
-    useAppStore.setState((state) => ({ 
+    useAppStore.setState((state: any) => ({ 
       resetCameraTrigger: state.resetCameraTrigger + 1 
     }));
     

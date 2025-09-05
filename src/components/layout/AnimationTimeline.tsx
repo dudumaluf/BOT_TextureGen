@@ -300,7 +300,7 @@ export default function AnimationTimeline({ isQueueOpen = false, isSceneOpen = f
                     backgroundImage: 'none', // Remove default dropdown arrow styling
                   }}
                 >
-                  {animationNames.map((name, index) => (
+                  {animationNames.map((name: string, index: number) => (
                     <option 
                       key={`${name}-${index}`} 
                       value={name}

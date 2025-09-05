@@ -222,7 +222,7 @@ interface AppState {
   hasModelSettings: (modelFileName: string) => Promise<boolean>;
 }
 
-export const useAppStore = create<AppState>((set) => ({
+export const useAppStore = create<AppState>((set: any) => ({
   modelUrl: null,
   modelId: null,
   modelFileName: null,
@@ -304,13 +304,13 @@ export const useAppStore = create<AppState>((set) => ({
   setBackgroundColor: (color) => set({ backgroundColor: color }),
   setShowEnvironmentBackground: (show) => set({ showEnvironmentBackground: show }),
   setTheme: (theme) => set({ theme }),
-  setMaterialSettings: (settings) => set((state) => ({ materialSettings: { ...state.materialSettings, ...settings } })),
+  setMaterialSettings: (settings) => set((state: any) => ({ materialSettings: { ...state.materialSettings, ...settings } })),
   setCameraDistance: (distance) => set({ cameraDistance: distance }),
   setObjectScale: (scale) => set({ objectScale: scale }),
   setObjectPosition: (position) => set({ objectPosition: position }),
   setObjectRotation: (rotation) => set({ objectRotation: rotation }),
   setPromptPanelHeight: (height) => set({ promptPanelHeight: height }),
-  resetCamera: () => set((state) => ({ 
+  resetCamera: () => set((state: any) => ({ 
     cameraDistance: 5, 
     objectScale: 1, 
     resetCameraTrigger: state.resetCameraTrigger + 1 
@@ -319,7 +319,7 @@ export const useAppStore = create<AppState>((set) => ({
   autoFrameModel: () => {
     console.log("🎯 Store autoFrameModel called - this should be replaced by Model component");
     // This will be replaced by the Model component implementation
-    set((state) => ({ 
+    set((state: any) => ({ 
       resetCameraTrigger: state.resetCameraTrigger + 1 
     }));
   },
@@ -327,20 +327,20 @@ export const useAppStore = create<AppState>((set) => ({
   resetModelPosition: () => {
     console.log("🔄 Store resetModelPosition called - this should be replaced by Model component");
     // This will be replaced by the Model component implementation
-    set((state) => ({ 
+    set((state: any) => ({ 
       objectScale: 1,
       cameraDistance: 5,
       resetCameraTrigger: state.resetCameraTrigger + 1 
     }));
   },
-  setAsDefaults: () => set((state) => ({
+  setAsDefaults: () => set((state: any) => ({
     defaultSettings: {
       cameraDistance: state.cameraDistance,
       objectScale: state.objectScale,
       materialSettings: { ...state.materialSettings }
     }
   })),
-  resetToDefaults: () => set((state) => ({
+  resetToDefaults: () => set((state: any) => ({
     cameraDistance: state.defaultSettings.cameraDistance,
     objectScale: state.defaultSettings.objectScale,
     materialSettings: { ...state.defaultSettings.materialSettings },
@@ -368,26 +368,26 @@ export const useAppStore = create<AppState>((set) => ({
   setAnimationDuration: (duration) => set({ animationDuration: duration }),
   setAnimationPlaybackSpeed: (speed) => set({ animationPlaybackSpeed: speed }),
   setShowAnimationTimeline: (show) => set({ showAnimationTimeline: show }),
-  setGeneratedTextures: (textures) => set((state) => ({ generatedTextures: { ...state.generatedTextures, ...textures } })),
+  setGeneratedTextures: (textures) => set((state: any) => ({ generatedTextures: { ...state.generatedTextures, ...textures } })),
   setCurrentGeneration: (generation) => set({ currentGeneration: generation }),
-  setCanUpgrade: (canUpgrade) => set((state) => ({ 
+  setCanUpgrade: (canUpgrade) => set((state: any) => ({ 
     currentGeneration: state.currentGeneration ? { ...state.currentGeneration, canUpgrade } : null 
   })),
-  setIsUpgrading: (isUpgrading) => set((state) => ({ 
+  setIsUpgrading: (isUpgrading) => set((state: any) => ({ 
     currentGeneration: state.currentGeneration ? { ...state.currentGeneration, isUpgrading } : null 
   })),
-  addToQueue: (item) => set((state) => ({ 
+  addToQueue: (item) => set((state: any) => ({ 
     generationQueue: [...state.generationQueue, { ...item, id: item.id || Date.now().toString() }],
     queueCount: state.queueCount + 1
   })),
-  removeFromQueue: (itemId) => set((state) => ({ 
-    generationQueue: state.generationQueue.filter(item => item.id !== itemId && item.originalId !== itemId),
+  removeFromQueue: (itemId) => set((state: any) => ({ 
+    generationQueue: state.generationQueue.filter((item: any) => item.id !== itemId && item.originalId !== itemId),
     queueCount: Math.max(0, state.queueCount - 1)
   })),
-  toggleGallery: () => set((state) => ({ isGalleryOpen: !state.isGalleryOpen })),
-  toggleBottomBar: () => set((state) => ({ isBottomBarOpen: !state.isBottomBarOpen })),
-  toggleSettings: () => set((state) => ({ isSettingsOpen: !state.isSettingsOpen })),
-  toggleAssetPreview: () => set((state) => ({ isAssetPreviewOpen: !state.isAssetPreviewOpen })),
+  toggleGallery: () => set((state: any) => ({ isGalleryOpen: !state.isGalleryOpen })),
+  toggleBottomBar: () => set((state: any) => ({ isBottomBarOpen: !state.isBottomBarOpen })),
+  toggleSettings: () => set((state: any) => ({ isSettingsOpen: !state.isSettingsOpen })),
+  toggleAssetPreview: () => set((state: any) => ({ isAssetPreviewOpen: !state.isAssetPreviewOpen })),
   setAssetPreviewOpen: (open) => set({ isAssetPreviewOpen: open }),
   setGenerations: (generations) => set({ generations }),
   loadGeneration: (generation) => {
@@ -440,35 +440,35 @@ export const useAppStore = create<AppState>((set) => ({
     // Auto-load model settings if available
     if (modelFileName) {
       const { loadModelSettings } = useAppStore.getState();
-      loadModelSettings(modelFileName).then((loaded) => {
+      loadModelSettings(modelFileName).then((loaded: any) => {
         if (loaded) {
           console.log(`🎯 Auto-loaded settings for model: ${modelFileName}`);
         }
-      }).catch((error) => {
+      }).catch((error: any) => {
         console.error('Error auto-loading model settings:', error);
       });
     }
   },
   setModelPresets: (presets) => set({ modelPresets: presets }),
-  setActiveModelPreset: (presetId) => set((state) => ({
+  setActiveModelPreset: (presetId) => set((state: any) => ({
     activeModelPresetId: presetId,
-    modelPresets: state.modelPresets.map(preset => ({
+    modelPresets: state.modelPresets.map((preset: any) => ({
       ...preset,
       isActive: preset.id === presetId
     }))
   })),
-  addModelPreset: (preset) => set((state) => ({
+  addModelPreset: (preset) => set((state: any) => ({
     modelPresets: [...state.modelPresets, preset]
   })),
-  updateModelPreset: (presetId, updates) => set((state) => ({
-    modelPresets: state.modelPresets.map(preset => 
+  updateModelPreset: (presetId, updates) => set((state: any) => ({
+    modelPresets: state.modelPresets.map((preset: any) => 
       preset.id === presetId 
         ? { ...preset, ...updates, lastModified: new Date().toISOString() }
         : preset
     )
   })),
-  deleteModelPreset: (presetId) => set((state) => ({
-    modelPresets: state.modelPresets.filter(preset => preset.id !== presetId)
+  deleteModelPreset: (presetId) => set((state: any) => ({
+    modelPresets: state.modelPresets.filter((preset: any) => preset.id !== presetId)
   })),
   setUserEmail: (email) => set({ 
     userEmail: email,
@@ -477,9 +477,9 @@ export const useAppStore = create<AppState>((set) => ({
   setAdminMode: (isAdmin) => set({ isAdminMode: isAdmin }),
   
   // Model-specific settings management
-  saveModelSettings: async (modelFileName) => {
+  saveModelSettings: async (modelFileName: string): Promise<boolean> => {
     const state = useAppStore.getState();
-    if (!modelFileName) return;
+    if (!modelFileName) return false;
     
     const settings = {
       modelFileName,
@@ -511,7 +511,7 @@ export const useAppStore = create<AppState>((set) => ({
           lastUpdated: new Date().toISOString()
         });
         
-        set({ modelSettings: newModelSettings });
+        set({ modelSettings: newModelSettings as Map<string, ModelSettings> });
         console.log(`💾 Saved settings for model: ${modelFileName}`);
         return true;
       } else {
@@ -580,7 +580,7 @@ export const useAppStore = create<AppState>((set) => ({
         newModelSettings.set(modelFileName, settings);
         
         set({
-          modelSettings: newModelSettings,
+          modelSettings: newModelSettings as Map<string, ModelSettings>,
           cameraDistance: settings.cameraDistance,
           objectScale: settings.objectScale,
           objectPosition: { ...settings.objectPosition },
@@ -600,8 +600,8 @@ export const useAppStore = create<AppState>((set) => ({
     }
   },
   
-  hasModelSettings: async (modelFileName) => {
-    const state = useAppStore.getState();
+  hasModelSettings: async (modelFileName: string): Promise<boolean> => {
+    const state: any = useAppStore.getState();
     if (!modelFileName) return false;
     
     // Check local cache first
@@ -611,8 +611,8 @@ export const useAppStore = create<AppState>((set) => ({
     
     // Check database
     try {
-      const response = await fetch(`/api/model-settings?model_filename=${encodeURIComponent(modelFileName)}`);
-      const result = await response.json();
+      const response: any = await fetch(`/api/model-settings?model_filename=${encodeURIComponent(modelFileName)}`);
+      const result: any = await response.json();
       return result.success && result.settings !== null;
     } catch (error) {
       console.error('Error checking model settings:', error);

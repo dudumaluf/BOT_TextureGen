@@ -319,7 +319,7 @@ export default function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
       // Clear TextureGen queue
       if (textureGenQueue > 0) {
         console.log('Clearing TextureGen queue...');
-        generationQueue.forEach(item => {
+        generationQueue.forEach((item: any) => {
           console.log('Removing item:', item.id);
           removeFromQueue(item.id);
         });
@@ -413,7 +413,7 @@ export default function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
         
         // Get current model preset data for the generation
         const { activeModelPresetId, modelPresets } = useAppStore.getState();
-        const activePreset = modelPresets.find(p => p.isActive);
+        const activePreset = modelPresets.find((p: any) => p.isActive);
         
         console.log(`Queue: Sending generation request for ${displayName}`, {
           modelFileName: item.modelFileName,
@@ -818,7 +818,7 @@ export default function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
               </h4>
             </div>
 
-            {generationQueue.map((item, index) => (
+            {generationQueue.map((item: any, index: number) => (
               <div key={item.id} className={`flex items-center gap-3 p-3 rounded-lg border ${
                 theme === 'dark'
                   ? 'border-blue-700/50'

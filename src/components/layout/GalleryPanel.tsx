@@ -184,7 +184,7 @@ export default function GalleryPanel() {
   }, [loadGeneration, isMobile, toggleGallery]);
 
   const selectAll = () => {
-    setSelectedItems(new Set(generations.map(gen => gen.id)));
+    setSelectedItems(new Set(generations.map((gen: any) => gen.id)));
   };
 
   const clearSelection = () => {
@@ -213,7 +213,7 @@ export default function GalleryPanel() {
       if (error) throw error;
       
       // Update local state
-      setGenerations(generations.filter(gen => !selectedItems.has(gen.id)));
+      setGenerations(generations.filter((gen: any) => !selectedItems.has(gen.id)));
       clearSelection();
       
       toast.success(`Deleted ${itemsArray.length} generation(s)`);
@@ -392,7 +392,7 @@ export default function GalleryPanel() {
             gridSize === 'medium' ? 'grid-cols-2' : 
             'grid-cols-3'
           }`}>
-            {generations.map((gen, index) => (
+            {generations.map((gen: any, index: number) => (
               <GalleryItem
                 key={gen.id}
                 gen={gen}

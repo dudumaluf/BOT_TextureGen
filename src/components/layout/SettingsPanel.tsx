@@ -49,7 +49,7 @@ export default function SettingsModal() {
 
   const handleCreateNewPreset = () => {
     // Create a new preset based on the current active preset
-    const activePreset = modelPresets.find(p => p.isActive) || modelPresets[0];
+    const activePreset = modelPresets.find((p: any) => p.isActive) || modelPresets[0];
     const newPreset = createCustomPreset(
       activePreset,
       { displayName: 'New Custom Preset' },
@@ -261,7 +261,7 @@ export default function SettingsModal() {
                     </div>
 
                     <div className="space-y-3">
-                      {modelPresets.map((preset) => (
+                      {modelPresets.map((preset: any) => (
                         <div key={preset.id}>
                           {editingPreset === preset.id ? (
                             <ModelPresetEditor

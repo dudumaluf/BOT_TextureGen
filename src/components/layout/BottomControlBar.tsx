@@ -319,7 +319,7 @@ export default function BottomControlBar() {
     
     try {
       // Get the actual active preset data
-      const activePreset = modelPresets.find(p => p.isActive);
+      const activePreset = modelPresets.find((p: any) => p.isActive);
       
       console.log('Generation request data:', {
         modelFileName,
