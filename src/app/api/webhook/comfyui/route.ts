@@ -14,6 +14,10 @@ export async function POST(request: Request) {
     //   return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     // }
 
+    // Initialize clients at the top for use throughout the function
+    const supabaseService = createServiceClient();
+    const supabase = createServer();
+
     const body = await request.json();
     const { generationId, textures } = body;
     
@@ -27,7 +31,6 @@ export async function POST(request: Request) {
       });
       
       // Store the depth preview in the database so the frontend can see it
-      const supabase = createServer();
       
       try {
         const updateData: Record<string, any> = {};
@@ -162,8 +165,6 @@ export async function POST(request: Request) {
 
     // For webhooks, we need to bypass RLS since there's no user session
     // Use service client for storage operations to bypass RLS
-    const supabaseService = createServiceClient();
-    const supabase = createServer();
     
     // Skip the existence check for now - just try to update directly
     // This bypasses RLS issues since we're updating by ID
