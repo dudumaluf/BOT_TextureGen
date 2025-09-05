@@ -10,6 +10,24 @@ export function useViewportHeight() {
       document.documentElement.style.setProperty('--vh', `${vh}px`);
     };
 
+    // Prevent scroll behavior on mobile
+    const preventScroll = (e: TouchEvent) => {
+      // Allow scrolling within specific scrollable containers
+      const target = e.target as Element;
+      const scrollableContainer = target.closest('.overflow-y-auto, .overflow-y-scroll, [data-scrollable="true"]');
+      
+      if (!scrollableContainer) {
+        e.preventDefault();
+      }
+    };
+
+    const preventScrollWheel = (e: WheelEvent) => {
+      // Prevent wheel scrolling on the document
+      if (e.target === document.body || e.target === document.documentElement) {
+        e.preventDefault();
+      }
+    };
+
     // Set initial value
     setViewportHeight();
 
@@ -19,6 +37,12 @@ export function useViewportHeight() {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(setViewportHeight, 150);
     };
+
+    // Add scroll prevention for mobile
+    if (window.innerWidth < 640) {
+      document.addEventListener('touchmove', preventScroll, { passive: false });
+      document.addEventListener('wheel', preventScrollWheel, { passive: false });
+    }
 
     // Listen for resize events
     window.addEventListener('resize', handleResize);
@@ -40,6 +64,8 @@ export function useViewportHeight() {
       if (window.visualViewport) {
         window.visualViewport.removeEventListener('resize', setViewportHeight);
       }
+      document.removeEventListener('touchmove', preventScroll);
+      document.removeEventListener('wheel', preventScrollWheel);
       clearTimeout(timeoutId);
     };
   }, []);

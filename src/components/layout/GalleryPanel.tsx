@@ -1,11 +1,125 @@
 "use client";
 
 import { useAppStore, type GenerationRecord } from "@/store/appStore";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, memo } from "react";
 import { createClient } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import { ArrowUp, X, Grid3X3, Grid2X2, LayoutGrid, Trash2, CheckSquare, Square, Check } from "lucide-react";
 import { toast } from "sonner";
+import { useResponsive } from "@/hooks/useResponsive";
+
+// Memoized gallery item to prevent unnecessary re-renders during animations
+const GalleryItem = memo(({ 
+  gen, 
+  index, 
+  isSelected, 
+  isSelectionMode, 
+  theme, 
+  onToggleSelection, 
+  onLoadGeneration 
+}: {
+  gen: GenerationRecord;
+  index: number;
+  isSelected: boolean;
+  isSelectionMode: boolean;
+  theme: 'light' | 'dark';
+  onToggleSelection: (id: string) => void;
+  onLoadGeneration: (gen: GenerationRecord) => void;
+}) => (
+  <motion.div
+    key={gen.id}
+    layoutId={`gallery-item-${gen.id}`}
+    initial={false}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.2, ease: "easeOut" }}
+    className={`group relative aspect-square cursor-pointer overflow-hidden transition-all duration-200 ease-out border border-gray-200 ${
+      isSelected 
+        ? 'ring-2 ring-blue-500 ring-inset' 
+        : 'hover:brightness-110'
+    }`}
+    onClick={() => {
+      if (isSelectionMode) {
+        onToggleSelection(gen.id);
+      } else {
+        onLoadGeneration(gen);
+      }
+    }}
+  >
+    {/* Full-bleed Thumbnail */}
+    <div className="absolute inset-0">
+      {(gen.front_preview_storage_path || gen.thumbnail_storage_path) ? (
+        <img 
+          src={gen.front_preview_storage_path || gen.thumbnail_storage_path} 
+          alt="Generation thumbnail" 
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+        />
+      ) : (
+        <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
+          <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+      )}
+    </div>
+
+    {/* Top Left - Processing Spinner */}
+    {gen.status === 'processing' && (
+      <div className="absolute top-2 left-2 z-10">
+        <div className="w-3 h-3 border border-white/60 border-t-white rounded-full animate-spin shadow-sm" />
+      </div>
+    )}
+
+    {/* Bottom Overlay - Title Only */}
+    <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-white/90 via-white/70 to-transparent backdrop-blur-sm text-black transform translate-y-2 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-200">
+      <p className="text-sm font-semibold truncate" title={gen.subject_prompt || ''}>
+        {gen.subject_prompt || 'Untitled Generation'}
+      </p>
+    </div>
+
+    {/* Top Overlay - Quality Badge with Hover Transition */}
+    <div className="absolute top-2 right-2">
+      {/* Tiny circle (default state) */}
+      <div className={`w-2 h-2 rounded-full transition-all duration-300 ease-out group-hover:opacity-0 ${
+        gen.high_quality 
+          ? 'bg-green-500' 
+          : 'bg-yellow-500'
+      }`} />
+      
+      {/* Full pill (hover state) */}
+      <span className={`absolute top-0 right-0 px-2 py-1 text-xs font-bold rounded-full shadow-lg bg-transparent border-2 text-gray-700 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 ${
+        gen.high_quality 
+          ? 'border-green-500 text-green-600' 
+          : 'border-yellow-500 text-yellow-600'
+      }`}>
+        {gen.high_quality ? '4K' : '2K'}
+      </span>
+    </div>
+
+    {/* Selection Checkbox */}
+    {isSelectionMode && (
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        className="absolute top-2 left-2 z-10"
+      >
+        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shadow-lg ${
+          isSelected 
+            ? 'bg-blue-500 border-blue-500' 
+            : 'bg-white/90 border-white/90'
+        }`}>
+          {isSelected && <CheckSquare className="h-4 w-4 text-white" />}
+        </div>
+      </motion.div>
+    )}
+
+    {/* Selection Overlay */}
+    {isSelected && (
+      <div className="absolute inset-0 bg-blue-500/20 border-2 border-blue-500" />
+    )}
+  </motion.div>
+));
+
+GalleryItem.displayName = 'GalleryItem';
 
 export default function GalleryPanel() {
   const { 
@@ -13,9 +127,10 @@ export default function GalleryPanel() {
     setGenerations, 
     loadGeneration, 
     toggleGallery,
-    addToBatchQueue,
+    addToQueue,
     theme
   } = useAppStore();
+  const { isMobile } = useResponsive();
   const supabase = createClient();
   const [gridSize, setGridSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
@@ -27,8 +142,8 @@ export default function GalleryPanel() {
       return;
     }
     
-    addToBatchQueue({
-      ...generation,
+    addToQueue({
+      id: Date.now().toString(),
       type: 'upgrade' as const,
       originalId: generation.id,
       mainPrompt: generation.subject_prompt || 'Untitled Generation',
@@ -47,7 +162,7 @@ export default function GalleryPanel() {
     toast.success(`Added "${generation.subject_prompt || 'Generation'}" to upgrade queue`);
   };
 
-  const toggleSelection = (generationId: string) => {
+  const toggleSelection = useCallback((generationId: string) => {
     setSelectedItems(prev => {
       const newSet = new Set(prev);
       if (newSet.has(generationId)) {
@@ -57,7 +172,16 @@ export default function GalleryPanel() {
       }
       return newSet;
     });
-  };
+  }, []);
+
+  const handleLoadGeneration = useCallback((generation: GenerationRecord) => {
+    loadGeneration(generation);
+    
+    // Auto-close gallery on mobile after selecting a generation for better UX
+    if (isMobile) {
+      toggleGallery();
+    }
+  }, [loadGeneration, isMobile, toggleGallery]);
 
   const selectAll = () => {
     setSelectedItems(new Set(generations.map(gen => gen.id)));
@@ -175,10 +299,11 @@ export default function GalleryPanel() {
           )}
         </div>
         
-        <div className="flex items-center gap-2">
-          {/* Selection Mode Controls */}
+        <div className="flex items-center gap-1">
+          {/* Single row of controls */}
           {isSelectionMode ? (
-            <div className="flex items-center gap-1 mr-2">
+            <>
+              {/* Selection Mode: Select All + Delete Selected in single row */}
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
@@ -198,59 +323,51 @@ export default function GalleryPanel() {
               >
                 <Trash2 className="h-4 w-4" />
               </motion.button>
+            </>
+          ) : (
+            <>
+              {/* Normal Mode: Multi-select + Grid Size in single row */}
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={clearSelection}
+                onClick={() => setIsSelectionMode(true)}
                 className="p-1.5 rounded-md text-gray-600 hover:bg-gray-100 transition-colors"
-                title="Cancel Selection (Esc)"
+                title="Multi-select to delete items"
               >
-                <X className="h-4 w-4" />
+                <CheckSquare className="h-4 w-4" />
               </motion.button>
-            </div>
-          ) : (
-            <>
-              {/* Management Controls */}
-              <div className="flex items-center gap-1 mr-2">
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setIsSelectionMode(true)}
-                  className="p-1.5 rounded-md text-gray-600 hover:bg-gray-100 transition-colors"
-                  title="Multi-select to delete items"
-                >
-                  <CheckSquare className="h-4 w-4" />
-                </motion.button>
-                {/* Delete All button removed - only show delete when items are selected */}
-              </div>
-
-              {/* Grid Size Toggle */}
-              <div className="flex items-center gap-1 mr-3">
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => {
-                    const sizes: ('small' | 'medium' | 'large')[] = ['small', 'medium', 'large'];
-                    const currentIndex = sizes.indexOf(gridSize);
-                    const nextIndex = (currentIndex + 1) % sizes.length;
-                    setGridSize(sizes[nextIndex]);
-                  }}
-                  className="p-1.5 rounded-md text-gray-600 hover:bg-gray-100 transition-colors"
-                  title={`Grid Size: ${gridSize} (click to cycle)`}
-                >
-                  {gridSize === 'large' && <Grid2X2 className="h-4 w-4" />}
-                  {gridSize === 'medium' && <Grid3X3 className="h-4 w-4" />}
-                  {gridSize === 'small' && <LayoutGrid className="h-4 w-4" />}
-                </motion.button>
-              </div>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => {
+                  const sizes: ('small' | 'medium' | 'large')[] = ['small', 'medium', 'large'];
+                  const currentIndex = sizes.indexOf(gridSize);
+                  const nextIndex = (currentIndex + 1) % sizes.length;
+                  setGridSize(sizes[nextIndex]);
+                }}
+                className="p-1.5 rounded-md text-gray-600 hover:bg-gray-100 transition-colors"
+                title={`Grid Size: ${gridSize} (click to cycle)`}
+              >
+                {gridSize === 'large' && <Grid2X2 className="h-4 w-4" />}
+                {gridSize === 'medium' && <Grid3X3 className="h-4 w-4" />}
+                {gridSize === 'small' && <LayoutGrid className="h-4 w-4" />}
+              </motion.button>
             </>
           )}
 
+          {/* Single Close button - exits selection mode OR closes gallery */}
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            onClick={toggleGallery}
+            onClick={() => {
+              if (isSelectionMode) {
+                clearSelection(); // Exit selection mode
+              } else {
+                toggleGallery(); // Close gallery (desktop only)
+              }
+            }}
             className="hidden sm:block p-1 rounded-full hover:bg-gray-100 transition-colors"
+            title={isSelectionMode ? "Cancel Selection (Esc)" : "Close Gallery"}
           >
             <X className="h-4 w-4 text-gray-500" />
           </motion.button>
@@ -258,9 +375,9 @@ export default function GalleryPanel() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto">
         {generations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-500">
+          <div className="flex flex-col items-center justify-center h-full text-gray-500 p-4">
             <div className="w-16 h-16 mb-4 rounded-full bg-gray-100 flex items-center justify-center">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -270,103 +387,23 @@ export default function GalleryPanel() {
             <p className="text-sm text-center">Upload a model and reference to start!</p>
           </div>
         ) : (
-          <div className={`grid gap-3 ${
+          <div className={`grid ${
             gridSize === 'large' ? 'grid-cols-1' : 
             gridSize === 'medium' ? 'grid-cols-2' : 
             'grid-cols-3'
           }`}>
-            {generations.map((gen, index) => {
-              const isSelected = selectedItems.has(gen.id);
-              return (
-                <motion.div
-                  key={gen.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className={`group relative rounded-xl p-3 border cursor-pointer hover:shadow-md transition-all duration-200 ease-out ${
-                    isSelected 
-                      ? 'bg-blue-50 border-blue-500 shadow-md' 
-                      : theme === 'dark'
-                        ? 'bg-gray-900 border-gray-700 hover:border-blue-400'
-                        : 'bg-white border-gray-200 hover:border-blue-300'
-                  }`}
-                  onClick={() => {
-                    if (isSelectionMode) {
-                      toggleSelection(gen.id);
-                    } else {
-                      loadGeneration(gen);
-                    }
-                  }}
-                >
-                {/* Thumbnail */}
-                <div className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100 mb-3">
-                  {(gen.front_preview_storage_path || gen.thumbnail_storage_path) ? (
-                    <img 
-                      src={gen.front_preview_storage_path || gen.thumbnail_storage_path} 
-                      alt="Generation thumbnail" 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Info */}
-                <div className="space-y-2 min-w-0">
-                  <p className={`text-sm font-medium truncate overflow-hidden ${theme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`} title={gen.subject_prompt || ''}>
-                    {gen.subject_prompt || 'Untitled Generation'}
-                  </p>
-                  <div className="flex items-center justify-between min-w-0">
-                    <div className="flex items-center gap-2 min-w-0 flex-shrink">
-                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                        gen.status === 'completed' ? 'bg-green-500' :
-                        gen.status === 'processing' ? 'bg-yellow-500' :
-                        'bg-red-500'
-                      }`} />
-                      <p className="text-xs text-gray-500 capitalize truncate">{gen.status}</p>
-                    </div>
-                    <p className="text-xs text-gray-400 flex-shrink-0 ml-2">
-                      {gen.created_at ? new Date(gen.created_at).toLocaleDateString() : ''}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Selection Checkbox */}
-                {isSelectionMode && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute top-2 left-2 z-10"
-                  >
-                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                      isSelected 
-                        ? 'bg-blue-500 border-blue-500' 
-                        : 'bg-white border-gray-300'
-                    }`}>
-                      {isSelected && <CheckSquare className="h-3 w-3 text-white" />}
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Quality Indicator */}
-                <div className={`absolute top-2 flex items-center gap-1 ${isSelectionMode ? 'right-2' : 'left-2'}`}>
-                  <span className={`px-1.5 py-0.5 text-xs font-bold rounded ${
-                    gen.high_quality 
-                      ? 'bg-green-500 text-white' 
-                      : 'bg-orange-500 text-white'
-                  }`}>
-                    {gen.high_quality ? 'HQ' : 'LQ'}
-                  </span>
-                </div>
-
-
-              </motion.div>
-              );
-            })}
+            {generations.map((gen, index) => (
+              <GalleryItem
+                key={gen.id}
+                gen={gen}
+                index={index}
+                isSelected={selectedItems.has(gen.id)}
+                isSelectionMode={isSelectionMode}
+                theme={theme}
+                onToggleSelection={toggleSelection}
+                onLoadGeneration={handleLoadGeneration}
+              />
+            ))}
           </div>
         )}
       </div>

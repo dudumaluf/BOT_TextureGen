@@ -39,7 +39,6 @@ export interface GenerationRecord {
 export interface QueueItem {
   id: string;
   type: 'generation' | 'upgrade';
-  queueType: 'continuous' | 'batch'; // New field to distinguish queue types
   modelFileName: string | null;
   modelId: string | null;
   referenceImageUrl: string | null;
@@ -71,6 +70,20 @@ interface GenerationPair {
   };
 }
 
+interface ModelSettings {
+  cameraDistance: number;
+  objectScale: number;
+  objectPosition: { x: number; y: number; z: number };
+  objectRotation: { x: number; y: number; z: number }; // Rotation in radians
+  materialSettings: {
+    metalness: number;
+    roughness: number;
+    normalScale: number;
+    displacementScale: number;
+  };
+  lastUpdated: string; // ISO timestamp
+}
+
 interface AppState {
   modelUrl: string | null;
   modelId: string | null;
@@ -89,6 +102,8 @@ interface AppState {
   };
   cameraDistance: number;
   objectScale: number;
+  objectPosition: { x: number; y: number; z: number };
+  objectRotation: { x: number; y: number; z: number }; // Rotation in radians
   promptPanelHeight: number;
   resetCameraTrigger: number; // Increment to trigger camera reset
   defaultSettings: {
@@ -135,11 +150,13 @@ interface AppState {
   isBottomBarOpen: boolean; // Bottom control bar visibility
   isSettingsOpen: boolean; // Settings panel visibility
   isGalleryOpen: boolean;
+  isAssetPreviewOpen: boolean; // Asset preview panel visibility
   generations: GenerationRecord[]; // Holds the list of past generations
   modelPresets: ModelPreset[]; // Available model presets
   activeModelPresetId: string; // Currently selected model preset
   isAdminMode: boolean; // Admin mode for advanced controls
   userEmail: string | null; // Current user email
+  modelSettings: Map<string, ModelSettings>; // Settings per model filename
   setModelUrl: (url: string | null) => void;
   setModelId: (id: string | null) => void;
   setModelFileName: (name: string | null) => void;
@@ -152,8 +169,12 @@ interface AppState {
   setMaterialSettings: (settings: Partial<{ metalness: number; roughness: number; normalScale: number; displacementScale: number; }>) => void;
   setCameraDistance: (distance: number) => void;
   setObjectScale: (scale: number) => void;
+  setObjectPosition: (position: { x: number; y: number; z: number }) => void;
+  setObjectRotation: (rotation: { x: number; y: number; z: number }) => void;
   setPromptPanelHeight: (height: number) => void;
   resetCamera: () => void;
+  autoFrameModel: () => void;
+  resetModelPosition: () => void;
   setAsDefaults: () => void;
   resetToDefaults: () => void;
   setSeed: (seed: number) => void;
@@ -181,12 +202,12 @@ interface AppState {
   setCanUpgrade: (canUpgrade: boolean) => void;
   setIsUpgrading: (isUpgrading: boolean) => void;
   addToQueue: (item: QueueItem) => void;
-  addToContinuousQueue: (item: Omit<QueueItem, 'queueType'>) => void;
-  addToBatchQueue: (item: Omit<QueueItem, 'queueType'>) => void;
   removeFromQueue: (itemId: string) => void;
   toggleGallery: () => void;
   toggleBottomBar: () => void;
   toggleSettings: () => void;
+  toggleAssetPreview: () => void;
+  setAssetPreviewOpen: (open: boolean) => void;
   setGenerations: (generations: GenerationRecord[]) => void;
   loadGeneration: (generation: GenerationRecord) => void;
   setModelPresets: (presets: ModelPreset[]) => void;
@@ -196,6 +217,9 @@ interface AppState {
   deleteModelPreset: (presetId: string) => void;
   setUserEmail: (email: string | null) => void;
   setAdminMode: (isAdmin: boolean) => void;
+  saveModelSettings: (modelFileName: string) => Promise<boolean>;
+  loadModelSettings: (modelFileName: string) => Promise<boolean>;
+  hasModelSettings: (modelFileName: string) => Promise<boolean>;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -216,6 +240,8 @@ export const useAppStore = create<AppState>((set) => ({
   },
   cameraDistance: 5,
   objectScale: 1,
+  objectPosition: { x: 0, y: 0, z: 0 },
+  objectRotation: { x: 0, y: 0, z: 0 }, // No rotation by default
   promptPanelHeight: 180, // Default height
   resetCameraTrigger: 0,
   defaultSettings: {
@@ -262,11 +288,13 @@ export const useAppStore = create<AppState>((set) => ({
   isBottomBarOpen: false, // Start closed - user opens when needed
   isSettingsOpen: false,
   isGalleryOpen: false,
+  isAssetPreviewOpen: false,
   generations: [],
   modelPresets: defaultModelPresets,
   activeModelPresetId: 'standard-juggernaut',
   isAdminMode: false,
   userEmail: null,
+  modelSettings: new Map<string, ModelSettings>(),
   setModelUrl: (url) => set({ modelUrl: url }),
   setModelId: (id) => set({ modelId: id }),
   setModelFileName: (name) => set({ modelFileName: name }),
@@ -279,12 +307,32 @@ export const useAppStore = create<AppState>((set) => ({
   setMaterialSettings: (settings) => set((state) => ({ materialSettings: { ...state.materialSettings, ...settings } })),
   setCameraDistance: (distance) => set({ cameraDistance: distance }),
   setObjectScale: (scale) => set({ objectScale: scale }),
+  setObjectPosition: (position) => set({ objectPosition: position }),
+  setObjectRotation: (rotation) => set({ objectRotation: rotation }),
   setPromptPanelHeight: (height) => set({ promptPanelHeight: height }),
   resetCamera: () => set((state) => ({ 
     cameraDistance: 5, 
     objectScale: 1, 
     resetCameraTrigger: state.resetCameraTrigger + 1 
   })),
+  
+  autoFrameModel: () => {
+    console.log("🎯 Store autoFrameModel called - this should be replaced by Model component");
+    // This will be replaced by the Model component implementation
+    set((state) => ({ 
+      resetCameraTrigger: state.resetCameraTrigger + 1 
+    }));
+  },
+  
+  resetModelPosition: () => {
+    console.log("🔄 Store resetModelPosition called - this should be replaced by Model component");
+    // This will be replaced by the Model component implementation
+    set((state) => ({ 
+      objectScale: 1,
+      cameraDistance: 5,
+      resetCameraTrigger: state.resetCameraTrigger + 1 
+    }));
+  },
   setAsDefaults: () => set((state) => ({
     defaultSettings: {
       cameraDistance: state.cameraDistance,
@@ -295,7 +343,10 @@ export const useAppStore = create<AppState>((set) => ({
   resetToDefaults: () => set((state) => ({
     cameraDistance: state.defaultSettings.cameraDistance,
     objectScale: state.defaultSettings.objectScale,
-    materialSettings: { ...state.defaultSettings.materialSettings }
+    materialSettings: { ...state.defaultSettings.materialSettings },
+    objectPosition: { x: 0, y: 0, z: 0 },
+    objectRotation: { x: 0, y: 0, z: 0 },
+    resetCameraTrigger: state.resetCameraTrigger + 1
   })),
   setSeed: (seed) => set({ seed }),
   setIsLoading: (loading) => set({ isLoading: loading }),
@@ -329,14 +380,6 @@ export const useAppStore = create<AppState>((set) => ({
     generationQueue: [...state.generationQueue, { ...item, id: item.id || Date.now().toString() }],
     queueCount: state.queueCount + 1
   })),
-  addToContinuousQueue: (item) => set((state) => ({ 
-    generationQueue: [...state.generationQueue, { ...item, queueType: 'continuous', id: item.id || Date.now().toString() }],
-    queueCount: state.queueCount + 1
-  })),
-  addToBatchQueue: (item) => set((state) => ({ 
-    generationQueue: [...state.generationQueue, { ...item, queueType: 'batch', id: item.id || Date.now().toString() }],
-    queueCount: state.queueCount + 1
-  })),
   removeFromQueue: (itemId) => set((state) => ({ 
     generationQueue: state.generationQueue.filter(item => item.id !== itemId && item.originalId !== itemId),
     queueCount: Math.max(0, state.queueCount - 1)
@@ -344,6 +387,8 @@ export const useAppStore = create<AppState>((set) => ({
   toggleGallery: () => set((state) => ({ isGalleryOpen: !state.isGalleryOpen })),
   toggleBottomBar: () => set((state) => ({ isBottomBarOpen: !state.isBottomBarOpen })),
   toggleSettings: () => set((state) => ({ isSettingsOpen: !state.isSettingsOpen })),
+  toggleAssetPreview: () => set((state) => ({ isAssetPreviewOpen: !state.isAssetPreviewOpen })),
+  setAssetPreviewOpen: (open) => set({ isAssetPreviewOpen: open }),
   setGenerations: (generations) => set({ generations }),
   loadGeneration: (generation) => {
     // Extract filename from reference image URL for ComfyUI
@@ -391,6 +436,18 @@ export const useAppStore = create<AppState>((set) => ({
         front_preview: generation.front_preview_storage_path || null,
       }
     });
+    
+    // Auto-load model settings if available
+    if (modelFileName) {
+      const { loadModelSettings } = useAppStore.getState();
+      loadModelSettings(modelFileName).then((loaded) => {
+        if (loaded) {
+          console.log(`🎯 Auto-loaded settings for model: ${modelFileName}`);
+        }
+      }).catch((error) => {
+        console.error('Error auto-loading model settings:', error);
+      });
+    }
   },
   setModelPresets: (presets) => set({ modelPresets: presets }),
   setActiveModelPreset: (presetId) => set((state) => ({
@@ -418,4 +475,148 @@ export const useAppStore = create<AppState>((set) => ({
     isAdminMode: email === 'ddmaluf@gmail.com' // Auto-enable admin mode for your email
   }),
   setAdminMode: (isAdmin) => set({ isAdminMode: isAdmin }),
+  
+  // Model-specific settings management
+  saveModelSettings: async (modelFileName) => {
+    const state = useAppStore.getState();
+    if (!modelFileName) return;
+    
+    const settings = {
+      modelFileName,
+      cameraDistance: state.cameraDistance,
+      objectScale: state.objectScale,
+      objectPosition: { ...state.objectPosition },
+      objectRotation: { ...state.objectRotation },
+      materialSettings: { ...state.materialSettings }
+    };
+    
+    try {
+      const response = await fetch('/api/model-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Update local cache
+        const newModelSettings = new Map(state.modelSettings);
+        newModelSettings.set(modelFileName, {
+          cameraDistance: state.cameraDistance,
+          objectScale: state.objectScale,
+          objectPosition: { ...state.objectPosition },
+          objectRotation: { ...state.objectRotation },
+          materialSettings: { ...state.materialSettings },
+          lastUpdated: new Date().toISOString()
+        });
+        
+        set({ modelSettings: newModelSettings });
+        console.log(`💾 Saved settings for model: ${modelFileName}`);
+        return true;
+      } else {
+        console.error('Failed to save model settings:', result.error);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error saving model settings:', error);
+      return false;
+    }
+  },
+  
+  loadModelSettings: async (modelFileName) => {
+    const state = useAppStore.getState();
+    if (!modelFileName) return false;
+    
+    // Check local cache first
+    if (state.modelSettings.has(modelFileName)) {
+      const settings = state.modelSettings.get(modelFileName)!;
+      
+      set({
+        cameraDistance: settings.cameraDistance,
+        objectScale: settings.objectScale,
+        objectPosition: { ...settings.objectPosition },
+        objectRotation: { ...settings.objectRotation },
+        materialSettings: { ...settings.materialSettings },
+        resetCameraTrigger: state.resetCameraTrigger + 1
+      });
+      
+      console.log(`📂 Loaded cached settings for model: ${modelFileName}`);
+      return true;
+    }
+    
+    // Fetch from database
+    try {
+      const response = await fetch(`/api/model-settings?model_filename=${encodeURIComponent(modelFileName)}`);
+      const result = await response.json();
+      
+      if (result.success && result.settings) {
+        const dbSettings = result.settings;
+        
+        const settings: ModelSettings = {
+          cameraDistance: dbSettings.camera_distance,
+          objectScale: dbSettings.object_scale,
+          objectPosition: {
+            x: dbSettings.object_position_x,
+            y: dbSettings.object_position_y,
+            z: dbSettings.object_position_z
+          },
+          objectRotation: {
+            x: dbSettings.object_rotation_x || 0,
+            y: dbSettings.object_rotation_y || 0,
+            z: dbSettings.object_rotation_z || 0
+          },
+          materialSettings: {
+            metalness: dbSettings.material_metalness,
+            roughness: dbSettings.material_roughness,
+            normalScale: dbSettings.material_normal_scale,
+            displacementScale: dbSettings.material_displacement_scale
+          },
+          lastUpdated: dbSettings.updated_at
+        };
+        
+        // Update local cache
+        const newModelSettings = new Map(state.modelSettings);
+        newModelSettings.set(modelFileName, settings);
+        
+        set({
+          modelSettings: newModelSettings,
+          cameraDistance: settings.cameraDistance,
+          objectScale: settings.objectScale,
+          objectPosition: { ...settings.objectPosition },
+          objectRotation: { ...settings.objectRotation },
+          materialSettings: { ...settings.materialSettings },
+          resetCameraTrigger: state.resetCameraTrigger + 1
+        });
+        
+        console.log(`📂 Loaded database settings for model: ${modelFileName}`);
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error loading model settings:', error);
+      return false;
+    }
+  },
+  
+  hasModelSettings: async (modelFileName) => {
+    const state = useAppStore.getState();
+    if (!modelFileName) return false;
+    
+    // Check local cache first
+    if (state.modelSettings.has(modelFileName)) {
+      return true;
+    }
+    
+    // Check database
+    try {
+      const response = await fetch(`/api/model-settings?model_filename=${encodeURIComponent(modelFileName)}`);
+      const result = await response.json();
+      return result.success && result.settings !== null;
+    } catch (error) {
+      console.error('Error checking model settings:', error);
+      return false;
+    }
+  },
 }));

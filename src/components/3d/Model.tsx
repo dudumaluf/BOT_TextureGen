@@ -24,6 +24,10 @@ function ModelRenderer({ modelUrl }: { modelUrl: string }) {
   const generatedTextures = useAppStore((state) => state.generatedTextures);
   const materialSettings = useAppStore((state) => state.materialSettings);
   const objectScale = useAppStore((state) => state.objectScale);
+  const objectPosition = useAppStore((state) => state.objectPosition);
+  const objectRotation = useAppStore((state) => state.objectRotation);
+  const resetCameraTrigger = useAppStore((state) => state.resetCameraTrigger);
+  const { setCameraDistance, setObjectScale, setObjectPosition } = useAppStore();
   
   // Animation state
   const {
@@ -91,6 +95,116 @@ function ModelRenderer({ modelUrl }: { modelUrl: string }) {
       setAnimationTime(0);
     }
   }, [animations, modelUrl, setHasAnimations, setAnimations, setAnimationNames, setCurrentAnimation, setAnimationDuration, setAnimationTime, setIsAnimationPlaying]);
+
+  // Auto-framing function - centers and scales the model itself (not just camera)
+  const autoFrameModel = () => {
+    if (!scene || !group.current) return;
+
+    console.log("🎯 Auto-framing: Centering and scaling model at origin");
+
+    // Create a bounding box for the entire scene
+    const box = new THREE.Box3().setFromObject(scene);
+    
+    if (box.isEmpty()) {
+      console.warn("Auto-framing: Model has no geometry, using default values");
+      setObjectScale(1);
+      setCameraDistance(5);
+      return;
+    }
+
+    // Get the size and center of the bounding box
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const maxDimension = Math.max(size.x, size.y, size.z);
+    
+    console.log("🎯 Auto-framing: Original model state", {
+      size: { x: size.x.toFixed(2), y: size.y.toFixed(2), z: size.z.toFixed(2) },
+      center: { x: center.x.toFixed(2), y: center.y.toFixed(2), z: center.z.toFixed(2) },
+      maxDimension: maxDimension.toFixed(2)
+    });
+
+    // STEP 1: Center the model at origin by adjusting the group position
+    // Move the entire group so the model's bounding box center is at (0, 0, 0)
+    if (group.current) {
+      group.current.position.set(-center.x, -center.y, -center.z);
+    }
+    
+    // STEP 2: Calculate optimal scale to normalize the model size
+    // Target: make the largest dimension about 2 units for consistent viewing
+    const targetSize = 2;
+    const optimalScale = maxDimension > 0 ? targetSize / maxDimension : 1;
+    const finalScale = Math.max(0.01, Math.min(50, optimalScale)); // Allow much more aggressive scaling
+    
+    // STEP 3: Set optimal camera distance for the normalized model
+    // Since model is now centered and scaled, we can use a predictable camera distance
+    const optimalDistance = targetSize * 2.5; // 2.5x the target size for good framing
+    const finalDistance = Math.max(2, Math.min(200, optimalDistance)); // Allow up to 200 units
+    
+    console.log("🎯 Auto-framing: Applied transformations", {
+      modelPosition: { x: -center.x.toFixed(2), y: -center.y.toFixed(2), z: -center.z.toFixed(2) },
+      optimalScale: optimalScale.toFixed(3),
+      finalScale: finalScale.toFixed(3),
+      finalDistance: finalDistance.toFixed(2),
+      scaleChange: `${objectScale.toFixed(3)} → ${finalScale.toFixed(3)}`,
+      wasScaleClamped: optimalScale !== finalScale
+    });
+
+    // Apply the calculated values
+    setObjectScale(finalScale);
+    setCameraDistance(finalDistance);
+    
+    // Trigger camera update by incrementing the reset trigger
+    useAppStore.setState((state) => ({ 
+      resetCameraTrigger: state.resetCameraTrigger + 1 
+    }));
+    
+    console.log("🎯 Auto-framing: Model centered at origin and optimally scaled");
+  };
+
+  // Reset model position function - restores original position and scale
+  const resetModelPosition = () => {
+    if (!group.current) return;
+
+    console.log("🔄 Resetting model to original position and scale");
+    
+    // Reset group position to origin
+    group.current.position.set(0, 0, 0);
+    
+    // Reset scale and camera to defaults
+    setObjectScale(1);
+    setCameraDistance(5);
+    
+    // Trigger camera update by incrementing the reset trigger
+    useAppStore.setState((state) => ({ 
+      resetCameraTrigger: state.resetCameraTrigger + 1 
+    }));
+    
+    console.log("🔄 Model reset to original state");
+  };
+
+  // Update model position when store value changes
+  useEffect(() => {
+    if (group.current) {
+      group.current.position.set(objectPosition.x, objectPosition.y, objectPosition.z);
+    }
+  }, [objectPosition]);
+
+  // Update model rotation when store value changes
+  useEffect(() => {
+    if (group.current) {
+      group.current.rotation.set(objectRotation.x, objectRotation.y, objectRotation.z);
+    }
+  }, [objectRotation]);
+
+  // Expose auto-frame and reset functions to the store
+  useEffect(() => {
+    const store = useAppStore.getState();
+    // Replace the store's functions with our implementations
+    useAppStore.setState({
+      autoFrameModel: autoFrameModel,
+      resetModelPosition: resetModelPosition
+    });
+  }, [scene, setCameraDistance, setObjectScale]);
 
   // Control animation playback
   useEffect(() => {

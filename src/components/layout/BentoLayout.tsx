@@ -26,12 +26,15 @@ export default function BentoLayout() {
     referenceImageUrl,
     isBottomBarOpen,
     isSettingsOpen,
+    isAssetPreviewOpen,
     theme,
     hasAnimations,
     showAnimationTimeline,
     toggleGallery,
     toggleBottomBar,
     toggleSettings,
+    toggleAssetPreview,
+    setAssetPreviewOpen,
     setShowAnimationTimeline
   } = useAppStore();
   
@@ -40,7 +43,6 @@ export default function BentoLayout() {
   const { isMobile } = useResponsive();
   
   const [isQueueOpen, setIsQueueOpen] = useState(false);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSceneOpen, setIsSceneOpen] = useState(false);
   const [wasPromptPanelOpen, setWasPromptPanelOpen] = useState(false);
 
@@ -79,7 +81,7 @@ export default function BentoLayout() {
   const showQueuePanel = isQueueOpen;
   
   // STANDARD RULE: When ANY panel is open, only close button should be interactive
-  const anyPanelOpen = isGalleryOpen || showQueuePanel || isSceneOpen || isBottomBarOpen || isPreviewOpen || isSettingsOpen;
+  const anyPanelOpen = isGalleryOpen || showQueuePanel || isSceneOpen || isBottomBarOpen || isAssetPreviewOpen || isSettingsOpen;
 
   // Calculate grid layout for bento box
   const getGridCols = () => {
@@ -89,7 +91,7 @@ export default function BentoLayout() {
   };
 
   return (
-    <div className={`relative overflow-hidden mobile-container js-vh-fix ${theme === 'dark' ? 'dark bg-gray-900' : 'bg-gray-100'} ${isMobile ? 'w-screen' : 'h-screen w-screen'}`}>
+    <div className={`relative overflow-hidden mobile-container js-vh-fix h-screen w-screen ${theme === 'dark' ? 'dark bg-gray-900' : 'bg-gray-100'}`}>
       {/* Full-Screen 3D Viewer - Never Resizes */}
       <div className="absolute inset-0">
         <Viewer />
@@ -151,10 +153,10 @@ export default function BentoLayout() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ 
-            opacity: (isGalleryOpen || showQueuePanel || isSceneOpen || isPreviewOpen || isSettingsOpen) ? 0 : 1 
+            opacity: (!isMobile && (isGalleryOpen || isSceneOpen)) ? 0 : 1 
           }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className={`absolute top-2 left-2 sm:top-1 sm:left-1 z-[110] ${(isGalleryOpen || showQueuePanel || isSceneOpen || isPreviewOpen || isSettingsOpen) ? 'pointer-events-none' : 'pointer-events-auto'}`}
+          className={`absolute top-2 left-2 sm:top-1 sm:left-1 z-[110] ${(!isMobile && (isGalleryOpen || isSceneOpen)) ? 'pointer-events-none' : 'pointer-events-auto'}`}
           onClick={() => {
             // Quick test: Load sample animated GLB
             const { setModelUrl, setModelId, setModelFileName } = useAppStore.getState();
@@ -212,9 +214,9 @@ export default function BentoLayout() {
               toggleGallery();
               if (isSceneOpen) setIsSceneOpen(false);
             }}
-            className={`absolute bottom-20 left-2 sm:left-4 z-[120] w-12 h-12 flex items-center justify-center pointer-events-auto ${getButtonStyle('text-blue-600')}`}
+            className={`absolute top-1/2 left-2 sm:left-4 z-[120] w-12 h-12 flex items-center justify-center pointer-events-auto ${getButtonStyle('text-blue-600')}`}
+            style={{ transform: 'translateY(-50%)', touchAction: 'manipulation' }}
             title="Gallery"
-            style={{ touchAction: 'manipulation' }}
           >
             <Library className="h-4 w-4 sm:h-5 sm:w-5" />
           </motion.button>
@@ -279,7 +281,7 @@ export default function BentoLayout() {
               handleOpenPanel();
               setIsQueueOpen(true);
             }}
-            className={`absolute ${hasContent ? 'bottom-20 right-2 sm:right-4' : 'bottom-4 right-2 sm:right-4'} z-[110] w-12 h-12 flex items-center justify-center pointer-events-auto ${getButtonStyle(queueCount > 0 ? 'bg-orange-600' : 'text-purple-600')}`}
+            className={`absolute bottom-4 right-2 sm:right-4 z-[110] w-12 h-12 flex items-center justify-center pointer-events-auto ${getButtonStyle(queueCount > 0 ? 'bg-orange-600' : 'text-purple-600')}`}
             title={queueCount > 0 ? `Queue (${queueCount})` : "Queue"}
           >
             <ListOrdered className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -326,15 +328,16 @@ export default function BentoLayout() {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => {
-              if (!isPreviewOpen && isBottomBarOpen) {
+              if (!isAssetPreviewOpen && isBottomBarOpen) {
                 toggleBottomBar();
               }
-              setIsPreviewOpen(!isPreviewOpen);
+              toggleAssetPreview();
             }}
-            className={`absolute bottom-4 right-2 sm:right-4 z-[110] w-12 h-12 flex items-center justify-center pointer-events-auto ${getButtonStyle(isPreviewOpen ? 'text-red-600' : 'text-blue-600')}`}
-            title={isPreviewOpen ? "Hide Texture Preview" : "Show Texture Preview"}
+            className={`absolute top-1/2 right-2 sm:right-4 z-[110] w-12 h-12 flex items-center justify-center pointer-events-auto ${getButtonStyle(isAssetPreviewOpen ? 'text-red-600' : 'text-blue-600')}`}
+            style={{ transform: 'translateY(-50%)' }}
+            title={isAssetPreviewOpen ? "Hide Texture Preview" : "Show Texture Preview"}
           >
-            {isPreviewOpen ? (
+            {isAssetPreviewOpen ? (
               <X className="h-4 w-4 sm:h-5 sm:w-5" />
             ) : (
               <Layers className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -366,20 +369,17 @@ export default function BentoLayout() {
 
       {/* Asset Preview Panel - Bottom positioned like prompt panel */}
       <AnimatePresence>
-        {hasContent && isPreviewOpen && (
+        {hasContent && isAssetPreviewOpen && (
           <motion.div
-            initial={{ y: 100, opacity: 0 }}
+            initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-            className="absolute bottom-0 z-20 transition-all duration-500"
+            exit={{ y: 50, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="absolute z-20 w-full flex justify-center"
             style={{
-              // Mobile: Account for wider panels, Desktop: Original positioning  
-              left: isMobile ? '8px' : (isGalleryOpen || isSceneOpen) ? '272px' : '8px',
-              right: isMobile ? '8px' : showQueuePanel ? '272px' : '8px',
-              bottom: '80px', // Move up from bottom
-              display: 'flex',
-              justifyContent: 'center'
+              bottom: '80px', // Static bottom position
+              left: 0,
+              right: 0
             }}
           >
             <AssetPreview isOpen={true} onClose={undefined} />
@@ -410,8 +410,8 @@ export default function BentoLayout() {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => {
-              if (!isBottomBarOpen && isPreviewOpen) {
-                setIsPreviewOpen(false); // Close asset preview if open
+              if (!isBottomBarOpen && isAssetPreviewOpen) {
+                setAssetPreviewOpen(false); // Close asset preview if open
               }
               toggleBottomBar();
             }}
@@ -424,7 +424,7 @@ export default function BentoLayout() {
       )}
 
       {/* Mobile Panel Close Buttons - Same position as prompt toggle - MOBILE ONLY */}
-      {(isGalleryOpen || showQueuePanel || isSceneOpen || isPreviewOpen || isSettingsOpen) && (
+      {(isGalleryOpen || showQueuePanel || isSceneOpen || isAssetPreviewOpen || isSettingsOpen) && (
         <div 
           className="sm:hidden absolute bottom-4 left-2 right-2 z-[130] transition-all duration-300 ease-out pointer-events-none flex justify-center"
         >
@@ -450,8 +450,8 @@ export default function BentoLayout() {
               } else if (isSceneOpen) {
                 setIsSceneOpen(false);
                 handleClosePanel();
-              } else if (isPreviewOpen) {
-                setIsPreviewOpen(false);
+              } else if (isAssetPreviewOpen) {
+                setAssetPreviewOpen(false);
               } else if (isSettingsOpen) {
                 toggleSettings();
               }

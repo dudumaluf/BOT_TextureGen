@@ -7,6 +7,7 @@ import { X, Download } from "lucide-react";
 import { toast } from "sonner";
 import PreviewThumbnail from "@/components/ui/preview-thumbnail";
 import ImagePreviewModal from "./ImagePreviewModal";
+import { useResponsive } from "@/hooks/useResponsive";
 
 interface AssetPreviewProps {
   isOpen?: boolean;
@@ -15,6 +16,7 @@ interface AssetPreviewProps {
 
 export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewProps) {
   const { referenceImageUrl, generatedTextures, theme } = useAppStore();
+  const { isMobile } = useResponsive();
   const [previewModal, setPreviewModal] = useState<{ isOpen: boolean; imageUrl: string; title: string; alt: string }>({
     isOpen: false,
     imageUrl: '',
@@ -79,94 +81,100 @@ export default function AssetPreview({ isOpen = true, onClose }: AssetPreviewPro
           </motion.button>
         )}
 
-        <div className="p-1 sm:p-3">
-          <div className="flex items-center gap-1 sm:gap-3">
+        <div className="p-1 sm:p-4">
+          <div className="flex items-center gap-1 sm:gap-4">
             {generatedTextures.depth_preview && (
               <motion.div
-                initial={{ opacity: 0, x: 20 }}
+                key="depth-preview"
+                initial={false}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.15 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
               >
                 <PreviewThumbnail
                   src={generatedTextures.depth_preview}
                   alt="Depth Preview"
                   title="Depth"
-                  size={40} // Smaller on mobile
+                  size={isMobile ? 40 : 60} // Larger on desktop
                   onPreview={() => openPreview(generatedTextures.depth_preview!, "Depth Map", "Depth Preview")}
                 />
               </motion.div>
             )}
             {generatedTextures.front_preview && (
               <motion.div
-                initial={{ opacity: 0, x: 20 }}
+                key="front-preview"
+                initial={false}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.17 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
               >
                 <PreviewThumbnail
                   src={generatedTextures.front_preview}
                   alt="Front Preview"
                   title="Preview"
-                  size={40} // Smaller on mobile
+                  size={isMobile ? 40 : 60} // Larger on desktop
                   onPreview={() => openPreview(generatedTextures.front_preview!, "View Preview", "Front Preview")}
                 />
               </motion.div>
             )}
             {generatedTextures.thumbnail && (
               <motion.div
-                initial={{ opacity: 0, x: 20 }}
+                key="thumbnail"
+                initial={false}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
               >
                 <PreviewThumbnail
                   src={generatedTextures.thumbnail}
                   alt="Multiview Preview"
                   title="Multiview"
-                  size={40} // Smaller on mobile
+                  size={isMobile ? 40 : 60} // Larger on desktop
                   onPreview={() => openPreview(generatedTextures.thumbnail!, "Multiview Preview", "Multiview Preview")}
                 />
               </motion.div>
             )}
             {generatedTextures.diffuse && (
               <motion.div
-                initial={{ opacity: 0, x: 20 }}
+                key="diffuse"
+                initial={false}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
               >
                 <PreviewThumbnail
                   src={generatedTextures.diffuse}
                   alt="Diffuse Texture"
                   title="Diffuse"
-                  size={40} // Smaller on mobile
+                  size={isMobile ? 40 : 60} // Larger on desktop
                   onPreview={() => openPreview(generatedTextures.diffuse!, "Diffuse Texture", "Diffuse Texture")}
                 />
               </motion.div>
             )}
             {generatedTextures.normal && (
               <motion.div
-                initial={{ opacity: 0, x: 20 }}
+                key="normal"
+                initial={false}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
               >
                 <PreviewThumbnail
                   src={generatedTextures.normal}
                   alt="Normal Texture"
                   title="Normal"
-                  size={40} // Smaller on mobile
+                  size={isMobile ? 40 : 60} // Larger on desktop
                   onPreview={() => openPreview(generatedTextures.normal!, "Normal Map", "Normal Texture")}
                 />
               </motion.div>
             )}
             {generatedTextures.height && (
               <motion.div
-                initial={{ opacity: 0, x: 20 }}
+                key="height"
+                initial={false}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
               >
                 <PreviewThumbnail
                   src={generatedTextures.height}
                   alt="Height Texture"
                   title="Height"
-                  size={40} // Smaller on mobile
+                  size={isMobile ? 40 : 60} // Larger on desktop
                   onPreview={() => openPreview(generatedTextures.height!, "Height Map", "Height Texture")}
                 />
               </motion.div>

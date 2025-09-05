@@ -2,8 +2,10 @@
 
 import { useAppStore } from "@/store/appStore";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sun, Layers, Camera, RotateCcw, ChevronDown, ChevronRight, Star, RotateCcw as Reset } from "lucide-react";
+import { X, Sun, Layers, Camera, RotateCcw, ChevronDown, ChevronRight, Star, RotateCcw as Reset, Target, Box, Save, Download } from "lucide-react";
+import { toast } from "sonner";
 import { useState } from "react";
+import EditableSlider from "@/components/ui/EditableSlider";
 
 interface ScenePanelProps {
   isOpen: boolean;
@@ -24,13 +26,23 @@ export default function ScenePanel({ isOpen, onClose }: ScenePanelProps) {
     setCameraDistance,
     objectScale,
     setObjectScale,
+    objectPosition,
+    setObjectPosition,
+    objectRotation,
+    setObjectRotation,
+    autoFrameModel,
+    resetModelPosition,
     setAsDefaults,
     resetToDefaults,
     resetCamera,
-    theme 
+    theme,
+    modelFileName,
+    saveModelSettings,
+    loadModelSettings,
+    hasModelSettings
   } = useAppStore();
 
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['environment']));
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['environment', 'camera', 'object']));
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => {
@@ -66,6 +78,31 @@ export default function ScenePanel({ isOpen, onClose }: ScenePanelProps) {
           theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
         }`}>
           <h3 className={`font-semibold ${theme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}>Scene Settings</h3>
+          <div className="flex items-center gap-1">
+            {/* Save as Default Icon */}
+            {modelFileName && (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={async () => {
+                  const success = await saveModelSettings(modelFileName);
+                  if (success) {
+                    toast.success("💾 Settings saved as default for this model!");
+                  } else {
+                    toast.error("Failed to save settings");
+                  }
+                }}
+                className={`p-1 rounded-full transition-colors ${
+                  theme === 'dark' 
+                    ? 'hover:bg-green-900/30 text-green-400 hover:text-green-300' 
+                    : 'hover:bg-green-50 text-green-600 hover:text-green-700'
+                }`}
+                title="Save current settings as default for this model"
+              >
+                <Save className="h-4 w-4" />
+              </motion.button>
+            )}
+            {/* Close Button */}
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -79,6 +116,8 @@ export default function ScenePanel({ isOpen, onClose }: ScenePanelProps) {
             <X className="h-4 w-4" />
           </motion.button>
         </div>
+        </div>
+
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -228,80 +267,48 @@ export default function ScenePanel({ isOpen, onClose }: ScenePanelProps) {
                   className="overflow-hidden"
                 >
                   <div className="p-3 pt-0 space-y-3">
-                    <div>
-                      <label className={`block text-xs font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                        Metalness: {materialSettings.metalness.toFixed(1)}
-                      </label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.1"
+                    <EditableSlider
+                      label="Metalness"
                         value={materialSettings.metalness}
-                        onChange={(e) => setMaterialSettings({ metalness: parseFloat(e.target.value) })}
-                        className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer ${
-                          theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'
-                        }`}
-                      />
-                    </div>
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      onChange={(value) => setMaterialSettings({ metalness: value })}
+                    />
                     
-                    <div>
-                      <label className={`block text-xs font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                        Roughness: {materialSettings.roughness.toFixed(1)}
-                      </label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.1"
+                    <EditableSlider
+                      label="Roughness"
                         value={materialSettings.roughness}
-                        onChange={(e) => setMaterialSettings({ roughness: parseFloat(e.target.value) })}
-                        className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer ${
-                          theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'
-                        }`}
-                      />
-                    </div>
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      onChange={(value) => setMaterialSettings({ roughness: value })}
+                    />
                     
-                    <div>
-                      <label className={`block text-xs font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                        Normal Intensity: {materialSettings.normalScale.toFixed(1)}
-                      </label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="2"
-                        step="0.1"
+                    <EditableSlider
+                      label="Normal Intensity"
                         value={materialSettings.normalScale}
-                        onChange={(e) => setMaterialSettings({ normalScale: parseFloat(e.target.value) })}
-                        className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer ${
-                          theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'
-                        }`}
-                      />
-                    </div>
+                      min={0}
+                      max={2}
+                      step={0.01}
+                      onChange={(value) => setMaterialSettings({ normalScale: value })}
+                    />
                     
-                    <div>
-                      <label className={`block text-xs font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                        Displacement: {materialSettings.displacementScale.toFixed(2)}
-                      </label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="0.5"
-                        step="0.01"
+                    <EditableSlider
+                      label="Displacement"
                         value={materialSettings.displacementScale}
-                        onChange={(e) => setMaterialSettings({ displacementScale: parseFloat(e.target.value) })}
-                        className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer ${
-                          theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'
-                        }`}
-                      />
-                    </div>
+                      min={0}
+                      max={0.5}
+                      step={0.01}
+                      onChange={(value) => setMaterialSettings({ displacementScale: value })}
+                    />
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
-          {/* Camera & Object Section */}
+          {/* Camera Controls */}
           <div className={`rounded-lg border ${
             theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
           }`}>
@@ -315,7 +322,7 @@ export default function ScenePanel({ isOpen, onClose }: ScenePanelProps) {
             >
               <div className="flex items-center gap-2">
                 <Camera className={`h-4 w-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
-                <h4 className={`font-medium ${theme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}>Camera & Object</h4>
+                <h4 className={`font-medium ${theme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}>Camera</h4>
               </div>
               {expandedSections.has('camera') ? 
                 <ChevronDown className={`h-4 w-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} /> : 
@@ -332,52 +339,269 @@ export default function ScenePanel({ isOpen, onClose }: ScenePanelProps) {
                   className="overflow-hidden"
                 >
                   <div className="p-3 pt-0 space-y-3">
-                    <div>
-                      <label className={`block text-xs font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                        Camera Distance: {cameraDistance.toFixed(1)}
-                      </label>
-                      <input
-                        type="range"
-                        min="1"
-                        max="20"
-                        step="0.5"
+                    <EditableSlider
+                      label="Camera Distance"
                         value={cameraDistance}
-                        onChange={(e) => setCameraDistance(parseFloat(e.target.value))}
-                        className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer ${
-                          theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'
+                      min={1}
+                      max={200}
+                      step={0.01}
+                      onChange={setCameraDistance}
+                      formatValue={(val) => val.toFixed(1)}
+                    />
+
+                    {/* Camera Controls */}
+                    <div className="space-y-2">
+                      {/* Fit to View Button - Simple and Consistent */}
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          // Simple fit to view: just adjust camera distance to frame the model nicely
+                          const currentScale = objectScale;
+                          const optimalDistance = Math.max(5, currentScale * 8); // Simple formula
+                          const finalDistance = Math.min(200, optimalDistance);
+                          setCameraDistance(finalDistance);
+                          resetCamera(); // Reset camera position/rotation but keep new distance
+                          toast.success("📐 Model fitted to view!");
+                        }}
+                        className={`w-full p-2 rounded-lg border transition-all duration-200 flex items-center justify-center gap-2 ${
+                          theme === 'dark'
+                            ? 'bg-blue-900/20 border-blue-700/50 text-blue-300 hover:bg-blue-900/30 hover:border-blue-600'
+                            : 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 hover:border-blue-300'
                         }`}
+                        title="Adjust camera distance to perfectly frame the model at current scale"
+                      >
+                        <Target className="h-4 w-4" />
+                        <span className="text-sm font-medium">Fit to View</span>
+                      </motion.button>
+
+                      {/* Reset Camera Button */}
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={async () => {
+                          if (modelFileName) {
+                            // Try to load saved settings first
+                            const loaded = await loadModelSettings(modelFileName);
+                            if (loaded) {
+                              toast.success("📷 Camera reset to saved settings!");
+                            } else {
+                              // Fallback to global defaults if no saved settings
+                              setCameraDistance(5);
+                              resetCamera();
+                              toast.success("📷 Camera reset to defaults!");
+                            }
+                          } else {
+                            // No model loaded, use global defaults
+                            setCameraDistance(5);
+                            resetCamera();
+                            toast.success("📷 Camera reset to defaults!");
+                          }
+                        }}
+                        className={`w-full p-2 rounded-lg border transition-all duration-200 flex items-center justify-center gap-2 ${
+                          theme === 'dark'
+                            ? 'bg-gray-800/50 border-gray-600/50 text-gray-300 hover:bg-gray-700/50 hover:border-gray-500'
+                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300'
+                        }`}
+                        title="Reset camera distance and view to defaults"
+                      >
+                        <Camera className="h-4 w-4" />
+                        <span className="text-sm font-medium">Reset Camera</span>
+                      </motion.button>
+                    </div>
+
+                    {/* Model Settings - Only show if model is loaded */}
+                    {modelFileName && (
+                      <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className={`text-xs font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                          Model: {modelFileName.split('/').pop()?.replace('.glb', '') || 'Unknown'}
+                        </div>
+                      </div>
+                    )}
+
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Object Controls */}
+          <div className={`rounded-lg border ${
+            theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+          }`}>
+            <motion.button
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              onClick={() => toggleSection('object')}
+              className={`w-full flex items-center justify-between p-3 transition-colors ${
+                theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Box className={`h-4 w-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
+                <h4 className={`font-medium ${theme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}>Object</h4>
+              </div>
+              {expandedSections.has('object') ? 
+                <ChevronDown className={`h-4 w-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} /> : 
+                <ChevronRight className={`h-4 w-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
+              }
+            </motion.button>
+            
+            <AnimatePresence>
+              {expandedSections.has('object') && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-3 pt-0 space-y-3">
+                    <EditableSlider
+                      label="Object Scale"
+                      value={objectScale}
+                      min={0.01}
+                      max={5}
+                      step={0.01}
+                      onChange={setObjectScale}
+                    />
+
+                    {/* Position Controls */}
+                    <div className="space-y-3">
+                      <div className={`text-xs font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                        Position
+                      </div>
+                      
+                      <EditableSlider
+                        label="X Position"
+                        value={objectPosition.x}
+                        min={-1000}
+                        max={1000}
+                        step={0.01}
+                        onChange={(value) => setObjectPosition({
+                          ...objectPosition,
+                          x: value
+                        })}
+                        formatValue={(val) => val.toFixed(1)}
+                      />
+
+                      <EditableSlider
+                        label="Y Position"
+                        value={objectPosition.y}
+                        min={-1000}
+                        max={1000}
+                        step={0.01}
+                        onChange={(value) => setObjectPosition({
+                          ...objectPosition,
+                          y: value
+                        })}
+                        formatValue={(val) => val.toFixed(1)}
+                      />
+
+                      <EditableSlider
+                        label="Z Position"
+                        value={objectPosition.z}
+                        min={-1000}
+                        max={1000}
+                        step={0.01}
+                        onChange={(value) => setObjectPosition({
+                          ...objectPosition,
+                          z: value
+                        })}
+                        formatValue={(val) => val.toFixed(1)}
                       />
                     </div>
 
-                    <div>
-                      <label className={`block text-xs font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                        Object Scale: {objectScale.toFixed(1)}
-                      </label>
-                      <input
-                        type="range"
-                        min="0.1"
-                        max="5"
-                        step="0.1"
-                        value={objectScale}
-                        onChange={(e) => setObjectScale(parseFloat(e.target.value))}
-                        className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer ${
-                          theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'
-                        }`}
+                    {/* Rotation Controls */}
+                    <div className="space-y-2">
+                      <div className={`text-xs font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                        Rotation
+                      </div>
+                      
+                      <EditableSlider
+                        label="X Rotation"
+                        value={objectRotation.x}
+                        min={-Math.PI}
+                        max={Math.PI}
+                        step={0.01}
+                        onChange={(value) => setObjectRotation({
+                          ...objectRotation,
+                          x: value
+                        })}
+                        formatValue={(val) => `${Math.round(val * 180 / Math.PI)}°`}
+                      />
+
+                      <EditableSlider
+                        label="Y Rotation"
+                        value={objectRotation.y}
+                        min={-Math.PI}
+                        max={Math.PI}
+                        step={0.01}
+                        onChange={(value) => setObjectRotation({
+                          ...objectRotation,
+                          y: value
+                        })}
+                        formatValue={(val) => `${Math.round(val * 180 / Math.PI)}°`}
+                      />
+
+                      <EditableSlider
+                        label="Z Rotation"
+                        value={objectRotation.z}
+                        min={-Math.PI}
+                        max={Math.PI}
+                        step={0.01}
+                        onChange={(value) => setObjectRotation({
+                          ...objectRotation,
+                          z: value
+                        })}
+                        formatValue={(val) => `${Math.round(val * 180 / Math.PI)}°`}
                       />
                     </div>
 
+                    {/* Object Controls */}
+                    <div className="space-y-2">
+                      {/* Model Name */}
+                      {modelFileName && (
+                        <div className={`text-xs text-center ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                          {modelFileName.length > 30 ? `${modelFileName.substring(0, 30)}...` : modelFileName}
+                        </div>
+                      )}
+                      
+                      {/* Reset Object Button */}
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={resetCamera}
-                      className={`w-full p-2 rounded border transition-colors text-xs font-medium ${
+                        onClick={async () => {
+                          if (modelFileName) {
+                            // Try to load saved settings first
+                            const loaded = await loadModelSettings(modelFileName);
+                            if (loaded) {
+                              toast.success("📦 Object reset to saved settings!");
+                            } else {
+                              // Fallback to global defaults if no saved settings
+                              setObjectScale(1);
+                              setObjectPosition({ x: 0, y: 0, z: 0 });
+                              setObjectRotation({ x: 0, y: 0, z: 0 });
+                              toast.success("📦 Object reset to defaults!");
+                            }
+                          } else {
+                            // No model loaded, use global defaults
+                            setObjectScale(1);
+                            setObjectPosition({ x: 0, y: 0, z: 0 });
+                            setObjectRotation({ x: 0, y: 0, z: 0 });
+                            toast.success("📦 Object reset to defaults!");
+                          }
+                        }}
+                        className={`w-full p-2 rounded-lg border transition-all duration-200 flex items-center justify-center gap-2 ${
                         theme === 'dark'
-                          ? 'bg-gray-700 border-gray-600 hover:border-gray-500 text-gray-200'
-                          : 'bg-gray-50 border-gray-200 hover:border-gray-300 text-gray-700'
+                            ? 'bg-gray-800/50 border-gray-600/50 text-gray-300 hover:bg-gray-700/50 hover:border-gray-500'
+                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300'
                       }`}
+                        title="Reset object scale and position to defaults"
                     >
-                      Reset View
+                        <Box className="h-4 w-4" />
+                        <span className="text-sm font-medium">Reset Object</span>
                     </motion.button>
+                    </div>
                   </div>
                 </motion.div>
               )}
