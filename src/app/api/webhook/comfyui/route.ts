@@ -46,7 +46,7 @@ export async function POST(request: Request) {
             const fileName = `${generationId}_depth_preview.png`;
             const storagePath = `generations/${generationId}/${fileName}`;
             
-            const { error: uploadError } = await supabase.storage
+            const { error: uploadError } = await supabaseService.storage
               .from('generated_textures')
               .upload(storagePath, uint8Array, {
                 contentType: 'image/png',
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
               });
             
             if (!uploadError) {
-              const { data: { publicUrl } } = supabase.storage
+              const { data: { publicUrl } } = supabaseService.storage
                 .from('generated_textures')
                 .getPublicUrl(storagePath);
               updateData.depth_preview_storage_path = publicUrl;
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
             const fileName = `${generationId}_front_preview.png`;
             const storagePath = `generations/${generationId}/${fileName}`;
             
-            const { error: uploadError } = await supabase.storage
+            const { error: uploadError } = await supabaseService.storage
               .from('generated_textures')
               .upload(storagePath, uint8Array, {
                 contentType: 'image/png',
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
               });
             
             if (!uploadError) {
-              const { data: { publicUrl } } = supabase.storage
+              const { data: { publicUrl } } = supabaseService.storage
                 .from('generated_textures')
                 .getPublicUrl(storagePath);
               updateData.front_preview_storage_path = publicUrl;
@@ -161,7 +161,8 @@ export async function POST(request: Request) {
     }
 
     // For webhooks, we need to bypass RLS since there's no user session
-    // Let's use a simple approach - update without checking user ownership
+    // Use service client for storage operations to bypass RLS
+    const supabaseService = createServiceClient();
     const supabase = createServer();
     
     // Skip the existence check for now - just try to update directly
@@ -199,7 +200,7 @@ export async function POST(request: Request) {
             const fileName = `${generationId}_${textureType}.png`;
             const storagePath = `generations/${generationId}/${fileName}`;
             
-            const { error: uploadError } = await supabase.storage
+            const { error: uploadError } = await supabaseService.storage
               .from('generated_textures')
               .upload(storagePath, uint8Array, {
                 contentType: 'image/png',
@@ -212,7 +213,7 @@ export async function POST(request: Request) {
               updateData[`${textureType}_storage_path`] = comfyUrl;
             } else {
               // Get public URL from Supabase
-              const { data: { publicUrl } } = supabase.storage
+              const { data: { publicUrl } } = supabaseService.storage
                 .from('generated_textures')
                 .getPublicUrl(storagePath);
               
