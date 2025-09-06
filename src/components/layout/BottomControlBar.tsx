@@ -210,28 +210,32 @@ export default function BottomControlBar() {
           }
           
           // Remove completed generations from our active tracking set
+          // Check which of our actively tracked generations have completed
           const completedGenerationIds = new Set<string>();
-          if (processingGenerations) {
-            for (const generation of processingGenerations) {
-              if (generation.status === 'completed') {
+          if (completedGenerations && completedGenerations.length > 0) {
+            for (const generation of completedGenerations) {
+              // Only remove if it's in our active tracking set
+              if (activeGenerations.has(generation.id)) {
                 completedGenerationIds.add(generation.id);
               }
             }
           }
           
-          // Update active generations by removing completed ones
+          // Update active generations by removing completed ones and get the updated count
+          let updatedActiveGenerationsCount = activeGenerations.size;
           if (completedGenerationIds.size > 0) {
             setActiveGenerations(prev => {
               const newSet = new Set(prev);
               completedGenerationIds.forEach((id: string) => newSet.delete(id));
-              console.log(`Multi-Gen: Removed ${completedGenerationIds.size} completed generations from tracking`);
+              updatedActiveGenerationsCount = newSet.size; // Get the updated count
+              console.log(`Multi-Gen: Removed ${completedGenerationIds.size} completed generations from tracking. Remaining: ${updatedActiveGenerationsCount}`);
               return newSet;
             });
           }
           
           // Only stop loading if ALL our tracked generations are done
-          // Check both database results AND our active tracking set
-          const hasActiveGenerations = activeGenerations.size > 0;
+          // Check both database results AND our active tracking set (use updated count)
+          const hasActiveGenerations = updatedActiveGenerationsCount > 0;
           const hasProcessingInDB = processingGenerations && processingGenerations.length > 0;
           
           if (!hasActiveGenerations && !hasProcessingInDB) {
@@ -302,7 +306,9 @@ export default function BottomControlBar() {
     };
   }, [isLoading, currentGenerationId, activeGenerations, supabase, setGeneratedTextures, setIsLoading, setCurrentGeneration, setGenerations, notify]);
 
-  // Backup real-time listener for texture application (in case polling misses completions)
+  // Backup real-time listener for texture application (TEMPORARILY DISABLED to fix infinite loop)
+  // TODO: Re-enable this after fixing the polling system conflicts
+  /*
   useEffect(() => {
     const channel = supabase
       .channel('texture-application-backup')
@@ -358,6 +364,7 @@ export default function BottomControlBar() {
       supabase.removeChannel(channel);
     };
   }, [activeGenerations, supabase, setGeneratedTextures, setCurrentGeneration, currentGeneration, notify]);
+  */
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();

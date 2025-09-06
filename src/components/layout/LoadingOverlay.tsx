@@ -12,6 +12,7 @@ export default function LoadingOverlay({ isQueueOpen = false }: LoadingOverlayPr
   const { isLoading, theme } = useAppStore();
   const [currentMessage, setCurrentMessage] = useState("Processing");
   const [showTemporaryMessage, setShowTemporaryMessage] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   // Listen for custom notification events
   useEffect(() => {
@@ -36,6 +37,30 @@ export default function LoadingOverlay({ isQueueOpen = false }: LoadingOverlayPr
     };
   }, []);
 
+  // Progress simulation when loading
+  useEffect(() => {
+    let progressInterval: NodeJS.Timeout;
+    
+    if (isLoading) {
+      setProgress(0);
+      progressInterval = setInterval(() => {
+        setProgress(prev => {
+          // Simulate realistic progress: fast start, slow middle, fast end
+          const newProgress = Math.min(prev + Math.random() * 2 + 0.5, 95);
+          return newProgress;
+        });
+      }, 1000);
+    } else {
+      // Complete progress when done
+      setProgress(100);
+      setTimeout(() => setProgress(0), 500);
+    }
+    
+    return () => {
+      if (progressInterval) clearInterval(progressInterval);
+    };
+  }, [isLoading]);
+
   // Reset temporary message when loading stops
   useEffect(() => {
     if (!isLoading && showTemporaryMessage && currentMessage === "Processing") {
@@ -58,18 +83,51 @@ export default function LoadingOverlay({ isQueueOpen = false }: LoadingOverlayPr
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -20, scale: 0.9 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className={`px-4 py-2 rounded-lg backdrop-blur-sm border flex items-center gap-2 shadow-lg ${
+          className={`px-4 py-3 rounded-lg backdrop-blur-sm border shadow-lg ${
             theme === 'dark'
               ? 'bg-gray-900/95 text-white border-gray-700'
               : 'bg-white/95 text-gray-900 border-gray-200'
           }`}
         >
+          {/* Main processing indicator */}
+          <div className="flex items-center gap-2 mb-2">
+            {isLoading && (
+              <div className={`h-4 w-4 animate-spin rounded-full border-2 border-solid border-t-transparent ${
+                theme === 'dark' ? 'border-white' : 'border-gray-900'
+              }`}></div>
+            )}
+            <span className="text-sm font-medium">{currentMessage}</span>
+          </div>
+          
+          {/* Progress bar - only show when actually loading */}
           {isLoading && (
-            <div className={`h-4 w-4 animate-spin rounded-full border-2 border-solid border-t-transparent ${
-              theme === 'dark' ? 'border-white' : 'border-gray-900'
-            }`}></div>
+            <div className="w-full">
+              <div className={`w-full h-1.5 rounded-full overflow-hidden ${
+                theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
+              }`}>
+                <motion.div
+                  className={`h-full rounded-full ${
+                    theme === 'dark' 
+                      ? 'bg-gradient-to-r from-blue-400 to-purple-400' 
+                      : 'bg-gradient-to-r from-blue-500 to-purple-500'
+                  }`}
+                  initial={{ width: '0%' }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                />
+              </div>
+              <div className="flex justify-between items-center mt-1">
+                <span className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {Math.round(progress)}%
+                </span>
+                <span className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {progress < 30 ? 'Starting...' : 
+                   progress < 70 ? 'Processing...' : 
+                   progress < 95 ? 'Finalizing...' : 'Almost done...'}
+                </span>
+              </div>
+            </div>
           )}
-          <span className="text-sm font-medium">{currentMessage}</span>
         </motion.div>
       </AnimatePresence>
     </div>
