@@ -73,6 +73,8 @@ export default function BottomControlBar() {
   const router = useRouter();
   const [currentGenerationId, setCurrentGenerationId] = useState<string | null>(null);
   const [activeGenerations, setActiveGenerations] = useState<Set<string>>(new Set());
+  const [completedGenerationsSet, setCompletedGenerationsSet] = useState<Set<string>>(new Set()); // Track which generations we've already processed
+  const [lastProcessedTexture, setLastProcessedTexture] = useState<string | null>(null); // Prevent duplicate texture applications
   const [isExpanded, setIsExpanded] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [resizeStartY, setResizeStartY] = useState(0);
@@ -93,12 +95,14 @@ export default function BottomControlBar() {
       hasCondition: isLoading && (currentGenerationId || activeGenerations.size > 0)
     });
     
-    if (isLoading && (currentGenerationId || activeGenerations.size > 0)) {
-      console.log(`Multi-Gen: Starting tracking for ${activeGenerations.size} active generations`);
+    // Start polling if we have loading state and either active generations or a current generation
+    if (isLoading && (activeGenerations.size > 0 || currentGenerationId)) {
+      console.log(`Multi-Gen: Starting tracking for ${activeGenerations.size} active generations (currentId: ${currentGenerationId})`);
       
       let pollCount = 0;
       pollInterval = setInterval(async () => {
         pollCount++;
+        console.log(`Multi-Gen: Poll #${pollCount} starting - checking ${activeGenerations.size} active generations`);
         
         try {
           // Add a small delay to avoid race conditions with webhook updates
@@ -150,22 +154,19 @@ export default function BottomControlBar() {
             let hasNewCompletions = false;
             let latestTextureGeneration = null;
             
-            // Find the most recent generation with textures that we haven't applied yet
+            // Find the most recent generation with textures that we haven't processed yet
             for (const generation of completedGenerations) {
               if (generation.diffuse_storage_path && 
-                  generation.diffuse_storage_path !== currentTextures.diffuse) {
+                  !completedGenerationsSet.has(generation.id)) { // Haven't processed this completion yet
                 
-                // Check if this generation is in our active tracking set
-                if (activeGenerations.has(generation.id)) {
-                  console.log(`Multi-Gen: Found newly completed generation ${generation.id} with textures`);
-                  latestTextureGeneration = generation;
-                  hasNewCompletions = true;
-                  break; // Use the first (most recent) one we find
-                }
+                console.log(`Multi-Gen: Found newly completed generation ${generation.id} with textures`);
+                latestTextureGeneration = generation;
+                hasNewCompletions = true;
+                break; // Use the first (most recent) one we find
               }
             }
             
-            // Apply textures from the most recent completed generation
+            // Apply textures from the most recent completed generation with delay to prevent conflicts
             if (hasNewCompletions && latestTextureGeneration) {
               console.log(`Multi-Gen: Applying textures from completed generation ${latestTextureGeneration.id}`);
               
@@ -178,7 +179,13 @@ export default function BottomControlBar() {
                 front_preview: latestTextureGeneration.front_preview_storage_path || null
               };
               
+              // Apply textures and mark this generation as processed
+              console.log(`Multi-Gen: Applying textures from newly completed generation ${latestTextureGeneration.id}`);
               setGeneratedTextures(textureData);
+              setLastProcessedTexture(textureData.diffuse);
+              
+              // Mark this generation as processed to prevent duplicate processing
+              setCompletedGenerationsSet(prev => new Set([...prev, latestTextureGeneration.id]));
               
               // Create or update generation pair
               const generationPair = {
@@ -214,9 +221,10 @@ export default function BottomControlBar() {
           const completedGenerationIds = new Set<string>();
           if (completedGenerations && completedGenerations.length > 0) {
             for (const generation of completedGenerations) {
-              // Only remove if it's in our active tracking set
+              // Remove from active set if it's there (completed generations should be removed)
               if (activeGenerations.has(generation.id)) {
                 completedGenerationIds.add(generation.id);
+                console.log(`Multi-Gen: Removing completed generation ${generation.id} from active tracking`);
               }
             }
           }
@@ -242,6 +250,50 @@ export default function BottomControlBar() {
             console.log(`Multi-Gen: All generations completed, stopping loading state`);
             setIsLoading(false);
             setCurrentGenerationId(null);
+            
+            // Clear the poll interval since we're done
+            clearInterval(pollInterval);
+            
+            // Apply textures from the most recent completed generation (if not already processed)
+            if (completedGenerations && completedGenerations.length > 0) {
+              const latestGeneration = completedGenerations[0]; // Most recent
+              if (latestGeneration.diffuse_storage_path && 
+                  latestGeneration.diffuse_storage_path !== lastProcessedTexture) {
+                console.log(`Multi-Gen: Final texture application from latest generation ${latestGeneration.id}`);
+                setGeneratedTextures({
+                  diffuse: latestGeneration.diffuse_storage_path,
+                  normal: latestGeneration.normal_storage_path,
+                  height: latestGeneration.height_storage_path,
+                  thumbnail: latestGeneration.thumbnail_storage_path,
+                  depth_preview: latestGeneration.depth_preview_storage_path,
+                  front_preview: latestGeneration.front_preview_storage_path
+                });
+                setLastProcessedTexture(latestGeneration.diffuse_storage_path);
+                
+                // Trigger a notification that generation is complete
+                window.dispatchEvent(new CustomEvent('app-notification', {
+                  detail: {
+                    message: 'All Generations Complete!',
+                    type: 'success',
+                    duration: 2000,
+                    generationId: latestGeneration.id
+                  }
+                }));
+              }
+            }
+            
+            // Force refresh the gallery to ensure it shows the latest generations
+            const { data: allGenerations } = await supabase
+              .from('generations')
+              .select('*, model:models(*)')
+              .eq('user_id', user.id)
+              .order('created_at', { ascending: false })
+              .limit(50);
+            
+            if (allGenerations) {
+              setGenerations(allGenerations);
+              console.log(`Multi-Gen: Force refreshed gallery with ${allGenerations.length} generations`);
+            }
             
             console.log(`Multi-Gen: Cleared all loading and processing states`);
             return;
@@ -295,6 +347,12 @@ export default function BottomControlBar() {
           
         } catch (error) {
           console.error('Multi-Gen: Polling error:', error);
+          // On error, check if we should reset loading state
+          if (pollCount > 5) { // Only reset after a few attempts
+            console.log('Multi-Gen: Resetting loading state due to persistent errors');
+            setIsLoading(false);
+            setCurrentGenerationId(null);
+          }
         }
       }, 15000);
     }
@@ -304,7 +362,15 @@ export default function BottomControlBar() {
         clearInterval(pollInterval);
       }
     };
-  }, [isLoading, currentGenerationId, supabase, setGeneratedTextures, setIsLoading, setCurrentGeneration, setGenerations, notify]);
+  }, [isLoading, currentGenerationId, activeGenerations, completedGenerationsSet, lastProcessedTexture, supabase, setGeneratedTextures, setIsLoading, setCurrentGeneration, setGenerations, notify]);
+
+  // Add new generations to active tracking set
+  useEffect(() => {
+    if (currentGenerationId && !activeGenerations.has(currentGenerationId)) {
+      console.log(`Multi-Gen: Adding generation ${currentGenerationId} to active tracking`);
+      setActiveGenerations(prev => new Set([...prev, currentGenerationId]));
+    }
+  }, [currentGenerationId]); // Remove activeGenerations from dependencies to prevent infinite loop
 
   // Backup real-time listener for texture application (TEMPORARILY DISABLED to fix infinite loop)
   // TODO: Re-enable this after fixing the polling system conflicts
@@ -455,10 +521,26 @@ export default function BottomControlBar() {
       return;
     }
 
+    // Check if we're already processing too many generations - configurable limit
+    const MAX_CONCURRENT_GENERATIONS = 1000; // Effectively unlimited concurrent generations
+    if (isLoading && activeGenerations.size >= MAX_CONCURRENT_GENERATIONS) {
+      console.log(`Generation throttling: Already processing ${activeGenerations.size} generations. Limit reached.`);
+      notify.info(`Maximum ${MAX_CONCURRENT_GENERATIONS} concurrent generations allowed. Please wait for one to complete.`);
+      return;
+    }
+
+    // Add a small delay between rapid generation requests to prevent race conditions
+    if (activeGenerations.size > 0) {
+      console.log(`Generation delay: Adding 2-second delay before starting new generation`);
+      notify.info("Adding brief delay to prevent conflicts...");
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+
     const useProgressiveMode = !highQuality;
     const actualQuality = useProgressiveMode ? false : highQuality;
 
     // Set loading state for immediate processing
+    console.log(`Generation: Setting isLoading to true`);
     setIsLoading(true);
     
     if (useProgressiveMode) {
@@ -516,8 +598,8 @@ export default function BottomControlBar() {
         console.log(`Generation: Started immediate generation ${result.generationId}`);
         console.log(`Generation: State after setting ID`, { 
           generationId: result.generationId, 
-          isLoading, 
-          willTriggerPolling: isLoading && result.generationId 
+          isLoading: useAppStore.getState().isLoading, // Get current state, not closure
+          willTriggerPolling: useAppStore.getState().isLoading && result.generationId 
         });
         
         // Dispatch event to reset progress bar for new generation

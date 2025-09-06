@@ -158,10 +158,18 @@ export default function BentoLayout() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ 
-            opacity: (!isMobile && (isGalleryOpen || isSceneOpen)) ? 0 : 1 
+            opacity: (
+              // Desktop: fade out only for Gallery and Scene panels
+              (!isMobile && (isGalleryOpen || isSceneOpen)) ||
+              // Mobile: fade out for all panels except Asset Preview and Bottom Bar
+              (isMobile && (isGalleryOpen || isSceneOpen || showQueuePanel || isSettingsOpen))
+            ) ? 0 : 1 
           }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className={`absolute top-2 left-2 sm:top-1 sm:left-1 z-[110] ${(!isMobile && (isGalleryOpen || isSceneOpen)) ? 'pointer-events-none' : 'pointer-events-auto'}`}
+          className={`absolute top-2 left-2 sm:top-1 sm:left-1 z-[110] ${(
+            (!isMobile && (isGalleryOpen || isSceneOpen)) ||
+            (isMobile && (isGalleryOpen || isSceneOpen || showQueuePanel || isSettingsOpen))
+          ) ? 'pointer-events-none' : 'pointer-events-auto'}`}
           onClick={() => {
             // Quick test: Load sample animated GLB
             const { setModelUrl, setModelId, setModelFileName } = useAppStore.getState();

@@ -18,13 +18,24 @@ export default function LoadingOverlay({ isQueueOpen = false }: LoadingOverlayPr
   // Listen for custom notification events
   useEffect(() => {
     const handleNotification = (event: CustomEvent) => {
-      const { message, duration = 3000, generationId } = event.detail;
+      const { message, duration = 3000, generationId, type } = event.detail;
       
       // If this is a new generation starting, reset progress
-      if (generationId && generationId !== lastGenerationId) {
+      if (generationId && generationId !== lastGenerationId && type !== 'success') {
         console.log(`LoadingOverlay: New generation detected ${generationId}, resetting progress`);
         setProgress(0);
         setLastGenerationId(generationId);
+      }
+      
+      // If this is a completion notification, complete the progress
+      if (type === 'success' && message.includes('Complete')) {
+        console.log(`LoadingOverlay: Generation completion detected, setting progress to 100%`);
+        setProgress(100);
+        // Reset progress after showing completion
+        setTimeout(() => {
+          setProgress(0);
+          setLastGenerationId(null);
+        }, 1000);
       }
       
       // Show temporary message
@@ -50,12 +61,17 @@ export default function LoadingOverlay({ isQueueOpen = false }: LoadingOverlayPr
     let progressInterval: NodeJS.Timeout;
     
     if (isLoading) {
-      // Reset progress to 0 when starting new loading
-      setProgress(0);
+      // Don't reset progress if we already have some (for multi-generation continuity)
+      if (progress === 0) {
+        setProgress(5); // Start with some initial progress
+      }
       
       progressInterval = setInterval(() => {
         setProgress(prev => {
-          // Simulate realistic progress: fast start, slow middle, fast end
+          // Don't update if we're already at 100% (completion was triggered)
+          if (prev >= 100) return prev;
+          
+          // Simulate realistic progress: fast start, slow middle, steady end
           if (prev < 30) {
             // Fast start: 0-30% in first 30 seconds
             return Math.min(prev + Math.random() * 3 + 1, 30);
@@ -72,9 +88,9 @@ export default function LoadingOverlay({ isQueueOpen = false }: LoadingOverlayPr
         });
       }, 1000);
     } else {
-      // Complete progress when done
-      setProgress(100);
-      setTimeout(() => setProgress(0), 500);
+      // When loading stops, complete progress if not already at 100%
+      setProgress(prev => prev < 100 ? 100 : prev);
+      setTimeout(() => setProgress(0), 1000);
     }
     
     return () => {

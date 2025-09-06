@@ -299,7 +299,7 @@ export default function GalleryPanel() {
           console.log('Real-time: Generation change detected', payload);
           
           // Add a small delay to ensure database consistency after webhook updates
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 500));
           
           // Refresh the entire generations list to ensure consistency
           const { data, error } = await supabase
@@ -315,6 +315,36 @@ export default function GalleryPanel() {
                 hasTextures: !!g.diffuse_storage_path 
               }))
             });
+            
+            // If this was a completion event, also trigger a notification and apply textures
+            if (payload.eventType === 'UPDATE' && payload.new?.status === 'completed' && payload.old?.status === 'processing') {
+              const completedGeneration = payload.new;
+              console.log(`Real-time: Generation ${completedGeneration.id} completed, triggering notification and applying textures`);
+              
+              // Apply textures immediately to ensure they're updated
+              if (completedGeneration.diffuse_storage_path) {
+                const { setGeneratedTextures } = useAppStore.getState();
+                setGeneratedTextures({
+                  diffuse: completedGeneration.diffuse_storage_path,
+                  normal: completedGeneration.normal_storage_path,
+                  height: completedGeneration.height_storage_path,
+                  thumbnail: completedGeneration.thumbnail_storage_path,
+                  depth_preview: completedGeneration.depth_preview_storage_path,
+                  front_preview: completedGeneration.front_preview_storage_path
+                });
+                console.log(`Real-time: Applied textures for generation ${completedGeneration.id}`);
+              }
+              
+              // Trigger completion notification
+              window.dispatchEvent(new CustomEvent('app-notification', {
+                detail: {
+                  message: 'Generation Complete!',
+                  type: 'success',
+                  duration: 2000,
+                  generationId: completedGeneration.id
+                }
+              }));
+            }
           } else if (error) {
             console.error('Real-time: Error fetching updated generations:', error);
           }
