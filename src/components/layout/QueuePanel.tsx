@@ -191,12 +191,12 @@ export default function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
     
     try {
       // Check if this job is currently running or pending
-      const isRunning = comfyUIQueue?.queue_running?.some(item => {
+      const isRunning = comfyUIQueue?.queue_running?.some((item: any) => {
         const itemPromptId = Array.isArray(item) ? item[1] : item.prompt_id;
         return itemPromptId === promptId;
       });
       
-      const isPending = comfyUIQueue?.queue_pending?.some(item => {
+      const isPending = comfyUIQueue?.queue_pending?.some((item: any) => {
         const itemPromptId = Array.isArray(item) ? item[1] : item.prompt_id;
         return itemPromptId === promptId;
       });
