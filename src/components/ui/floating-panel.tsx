@@ -72,7 +72,7 @@ export default function FloatingPanel({
             </div>
             
             {/* Content */}
-            <div className="overflow-y-auto max-h-full">
+            <div className="overflow-y-auto panel-scroll max-h-full">
               {children}
             </div>
           </div>

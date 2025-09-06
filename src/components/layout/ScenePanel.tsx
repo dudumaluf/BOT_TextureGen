@@ -120,7 +120,7 @@ export default function ScenePanel({ isOpen, onClose }: ScenePanelProps) {
 
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto panel-scroll p-4 space-y-3">
           
           {/* Environment & Background Section */}
           <div className={`rounded-lg border ${
