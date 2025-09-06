@@ -46,7 +46,28 @@ function OrbitControlsWrapper() {
     }
   }, [resetCameraTrigger]);
 
-  return <OrbitControls ref={controlsRef} target={[0, 0, 0]} />;
+  return (
+    <OrbitControls 
+      ref={controlsRef} 
+      target={[0, 0, 0]}
+      enableZoom={true}
+      enablePan={true}
+      enableRotate={true}
+      zoomSpeed={0.5}
+      panSpeed={0.5}
+      rotateSpeed={0.5}
+      // Prevent wheel events from blocking page scroll on mobile
+      mouseButtons={{
+        LEFT: 0, // Rotate
+        MIDDLE: 1, // Zoom
+        RIGHT: 2 // Pan
+      }}
+      touches={{
+        ONE: 0, // Rotate
+        TWO: 2 // Zoom/Pan
+      }}
+    />
+  );
 }
 
 export default function Viewer() {

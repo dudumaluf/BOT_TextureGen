@@ -110,6 +110,14 @@ html, body {
     -webkit-overflow-scrolling: touch;
   }
   
+  /* Ensure gallery and other scrollable panels work on mobile */
+  .mobile-container .gallery-scroll,
+  .mobile-container .panel-scroll {
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
   /* Prevent zoom on input focus */
   input, textarea, select {
     font-size: 16px;

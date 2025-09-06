@@ -21,6 +21,7 @@ export default function BentoLayout() {
   const { 
     isGalleryOpen, 
     queueCount,
+    comfyUIQueue,
     generations,
     generatedTextures,
     referenceImageUrl,
@@ -49,6 +50,10 @@ export default function BentoLayout() {
   const hasGenerations = generations && generations.length > 0;
   const hasQueue = queueCount > 0;
   const hasContent = generatedTextures.diffuse || generatedTextures.normal || generatedTextures.height || generatedTextures.thumbnail || generatedTextures.depth_preview || generatedTextures.front_preview;
+  
+  // Calculate total active jobs (internal queue + ComfyUI queue)
+  const comfyUIActiveJobs = (comfyUIQueue?.queue_running?.length || 0) + (comfyUIQueue?.queue_pending?.length || 0);
+  const totalActiveJobs = queueCount + comfyUIActiveJobs;
 
   // Helper functions for panel management
   const handleOpenPanel = () => {
@@ -281,17 +286,17 @@ export default function BentoLayout() {
               handleOpenPanel();
               setIsQueueOpen(true);
             }}
-            className={`absolute bottom-4 right-2 sm:right-4 z-[110] w-12 h-12 flex items-center justify-center pointer-events-auto ${getButtonStyle(queueCount > 0 ? 'bg-orange-600' : 'text-purple-600')}`}
-            title={queueCount > 0 ? `Queue (${queueCount})` : "Queue"}
+            className={`absolute bottom-4 right-2 sm:right-4 z-[110] w-12 h-12 flex items-center justify-center pointer-events-auto ${getButtonStyle(totalActiveJobs > 0 ? 'bg-orange-600' : 'text-purple-600')}`}
+            title={totalActiveJobs > 0 ? `Queue (${totalActiveJobs})` : "Queue"}
           >
             <ListOrdered className="h-4 w-4 sm:h-5 sm:w-5" />
-            {queueCount > 0 && (
+            {totalActiveJobs > 0 && (
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold"
               >
-                {queueCount}
+                {totalActiveJobs}
               </motion.div>
             )}
           </motion.button>

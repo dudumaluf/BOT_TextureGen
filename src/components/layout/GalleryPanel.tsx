@@ -418,7 +418,7 @@ export default function GalleryPanel() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto gallery-scroll">
         {generations.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500 p-4">
             <div className="w-16 h-16 mb-4 rounded-full bg-gray-100 flex items-center justify-center">

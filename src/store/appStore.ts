@@ -148,6 +148,7 @@ interface AppState {
   currentGeneration: GenerationPair | null; // Current generation pair
   generationQueue: QueueItem[]; // Background queue (both generations and upgrades)
   queueCount: number; // Number of items in queue
+  comfyUIQueue: any | null; // ComfyUI server queue status
   isBottomBarOpen: boolean; // Bottom control bar visibility
   isSettingsOpen: boolean; // Settings panel visibility
   isGalleryOpen: boolean;
@@ -204,6 +205,7 @@ interface AppState {
   setIsUpgrading: (isUpgrading: boolean) => void;
   addToQueue: (item: QueueItem) => void;
   removeFromQueue: (itemId: string) => void;
+  setComfyUIQueue: (queue: any | null) => void;
   toggleGallery: () => void;
   toggleBottomBar: () => void;
   toggleSettings: () => void;
@@ -286,6 +288,7 @@ export const useAppStore = create<AppState>((set: any) => ({
   currentGeneration: null,
   generationQueue: [],
   queueCount: 0,
+  comfyUIQueue: null,
   isBottomBarOpen: false, // Start closed - user opens when needed
   isSettingsOpen: false,
   isGalleryOpen: false,
@@ -385,6 +388,7 @@ export const useAppStore = create<AppState>((set: any) => ({
     generationQueue: state.generationQueue.filter((item: any) => item.id !== itemId && item.originalId !== itemId),
     queueCount: Math.max(0, state.queueCount - 1)
   })),
+  setComfyUIQueue: (queue: any | null) => set({ comfyUIQueue: queue }),
   toggleGallery: () => set((state: any) => ({ isGalleryOpen: !state.isGalleryOpen })),
   toggleBottomBar: () => set((state: any) => ({ isBottomBarOpen: !state.isBottomBarOpen })),
   toggleSettings: () => set((state: any) => ({ isSettingsOpen: !state.isSettingsOpen })),

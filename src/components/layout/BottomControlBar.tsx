@@ -145,53 +145,67 @@ export default function BottomControlBar() {
           if (!completedError && completedGenerations && completedGenerations.length > 0) {
             console.log(`Multi-Gen: Found ${completedGenerations.length} recently completed generations`);
             
-            // Process the most recent completed generation
-            const latestCompleted = completedGenerations[0];
+            // Process ALL newly completed generations, not just the latest
             const currentTextures = useAppStore.getState().generatedTextures;
+            let hasNewCompletions = false;
+            let latestTextureGeneration = null;
             
-            // Only update if this is a new completion (different from current textures)
-            if (latestCompleted.diffuse_storage_path && 
-                latestCompleted.diffuse_storage_path !== currentTextures.diffuse) {
-              
-              console.log(`Multi-Gen: Applying textures from completed generation ${latestCompleted.id}`);
+            // Find the most recent generation with textures that we haven't applied yet
+            for (const generation of completedGenerations) {
+              if (generation.diffuse_storage_path && 
+                  generation.diffuse_storage_path !== currentTextures.diffuse) {
+                
+                // Check if this generation is in our active tracking set
+                if (activeGenerations.has(generation.id)) {
+                  console.log(`Multi-Gen: Found newly completed generation ${generation.id} with textures`);
+                  latestTextureGeneration = generation;
+                  hasNewCompletions = true;
+                  break; // Use the first (most recent) one we find
+                }
+              }
+            }
+            
+            // Apply textures from the most recent completed generation
+            if (hasNewCompletions && latestTextureGeneration) {
+              console.log(`Multi-Gen: Applying textures from completed generation ${latestTextureGeneration.id}`);
               
               const textureData = {
-                diffuse: latestCompleted.diffuse_storage_path || null,
-                normal: latestCompleted.normal_storage_path || null,
-                height: latestCompleted.height_storage_path || null,
-                thumbnail: latestCompleted.thumbnail_storage_path || null,
-                depth_preview: latestCompleted.depth_preview_storage_path || null,
-                front_preview: latestCompleted.front_preview_storage_path || null
+                diffuse: latestTextureGeneration.diffuse_storage_path || null,
+                normal: latestTextureGeneration.normal_storage_path || null,
+                height: latestTextureGeneration.height_storage_path || null,
+                thumbnail: latestTextureGeneration.thumbnail_storage_path || null,
+                depth_preview: latestTextureGeneration.depth_preview_storage_path || null,
+                front_preview: latestTextureGeneration.front_preview_storage_path || null
               };
               
               setGeneratedTextures(textureData);
               
               // Create or update generation pair
               const generationPair = {
-                id: latestCompleted.id,
-                fastGeneration: latestCompleted.high_quality ? currentGeneration?.fastGeneration : latestCompleted,
-                hqGeneration: latestCompleted.high_quality ? latestCompleted : undefined,
-                canUpgrade: !latestCompleted.high_quality,
+                id: latestTextureGeneration.id,
+                fastGeneration: latestTextureGeneration.high_quality ? currentGeneration?.fastGeneration : latestTextureGeneration,
+                hqGeneration: latestTextureGeneration.high_quality ? latestTextureGeneration : undefined,
+                canUpgrade: !latestTextureGeneration.high_quality,
                 isUpgrading: false,
                 currentTextures: textureData
               };
               
               setCurrentGeneration(generationPair);
               
-              // Refresh gallery immediately
-              const { data: allGenerations } = await supabase
-                .from('generations')
-                .select('*, model:models(*)')
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: false })
-                .limit(50);
-              
-              if (allGenerations) {
-                setGenerations(allGenerations);
-                console.log(`Multi-Gen: Updated gallery with ${allGenerations.length} generations`);
-              }
-              
-              notify.success(`${latestCompleted.high_quality ? 'High Quality' : 'Fast'} generation completed!`);
+              notify.success(`${latestTextureGeneration.high_quality ? 'High Quality' : 'Fast'} generation completed!`);
+            }
+            
+            // Always refresh gallery for all completed generations (Realtime handles this too, but ensure consistency)
+            const { data: allGenerations } = await supabase
+              .from('generations')
+              .select('*, model:models(*)')
+              .eq('user_id', user.id)
+              .order('created_at', { ascending: false })
+              .limit(50);
+            
+            if (allGenerations) {
+              setGenerations(allGenerations);
+              console.log(`Multi-Gen: Updated gallery with ${allGenerations.length} generations`);
             }
           }
           
@@ -287,6 +301,63 @@ export default function BottomControlBar() {
       }
     };
   }, [isLoading, currentGenerationId, activeGenerations, supabase, setGeneratedTextures, setIsLoading, setCurrentGeneration, setGenerations, notify]);
+
+  // Backup real-time listener for texture application (in case polling misses completions)
+  useEffect(() => {
+    const channel = supabase
+      .channel('texture-application-backup')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'generations',
+          filter: 'status=eq.completed'
+        },
+        async (payload) => {
+          const updatedGeneration = payload.new as any;
+          console.log('Backup Real-time: Generation completed', updatedGeneration.id);
+          
+          // Only apply if this generation is in our active tracking and has textures
+          if (activeGenerations.has(updatedGeneration.id) && updatedGeneration.diffuse_storage_path) {
+            const currentTextures = useAppStore.getState().generatedTextures;
+            
+            // Only apply if different from current textures
+            if (updatedGeneration.diffuse_storage_path !== currentTextures.diffuse) {
+              console.log('Backup Real-time: Applying textures from', updatedGeneration.id);
+              
+              const textureData = {
+                diffuse: updatedGeneration.diffuse_storage_path || null,
+                normal: updatedGeneration.normal_storage_path || null,
+                height: updatedGeneration.height_storage_path || null,
+                thumbnail: updatedGeneration.thumbnail_storage_path || null,
+                depth_preview: updatedGeneration.depth_preview_storage_path || null,
+                front_preview: updatedGeneration.front_preview_storage_path || null
+              };
+              
+              setGeneratedTextures(textureData);
+              
+              const generationPair = {
+                id: updatedGeneration.id,
+                fastGeneration: updatedGeneration.high_quality ? currentGeneration?.fastGeneration : updatedGeneration,
+                hqGeneration: updatedGeneration.high_quality ? updatedGeneration : undefined,
+                canUpgrade: !updatedGeneration.high_quality,
+                isUpgrading: false,
+                currentTextures: textureData
+              };
+              
+              setCurrentGeneration(generationPair);
+              notify.success(`${updatedGeneration.high_quality ? 'High Quality' : 'Fast'} generation completed!`);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activeGenerations, supabase, setGeneratedTextures, setCurrentGeneration, currentGeneration, notify]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();

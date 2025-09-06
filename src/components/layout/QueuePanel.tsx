@@ -24,13 +24,14 @@ export default function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
     isAdminMode,
     userEmail,
     isLoading,
-    setIsLoading
+    setIsLoading,
+    setComfyUIQueue
   } = useAppStore();
 
   const supabase = createClient();
   
-  // ComfyUI Queue State
-  const [comfyUIQueue, setComfyUIQueue] = useState<ComfyUIQueueStatus | null>(null);
+  // ComfyUI Queue State - now using global store
+  const comfyUIQueue = useAppStore((state: any) => state.comfyUIQueue);
   const [userPromptIds, setUserPromptIds] = useState<Set<string>>(new Set());
   const [systemStats, setSystemStats] = useState<any>(null);
   const [isLoadingQueue, setIsLoadingQueue] = useState(false);
@@ -635,7 +636,11 @@ export default function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
       }`}>
         <div className="flex items-center gap-3">
           <h3 className={`font-semibold ${theme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}>
-            Queue ({queueCount})
+            Queue ({(() => {
+              const comfyUIActiveJobs = (comfyUIQueue?.queue_running?.length || 0) + (comfyUIQueue?.queue_pending?.length || 0);
+              const totalActiveJobs = queueCount + comfyUIActiveJobs;
+              return totalActiveJobs;
+            })()})
           </h3>
         </div>
         
@@ -697,7 +702,7 @@ export default function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
 
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto panel-scroll p-4">
         {/* ComfyUI Queue Status */}
         {comfyUIQueue && (
           <div className="mb-4">
