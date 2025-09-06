@@ -304,7 +304,7 @@ export default function BottomControlBar() {
         clearInterval(pollInterval);
       }
     };
-  }, [isLoading, currentGenerationId, activeGenerations, supabase, setGeneratedTextures, setIsLoading, setCurrentGeneration, setGenerations, notify]);
+  }, [isLoading, currentGenerationId, supabase, setGeneratedTextures, setIsLoading, setCurrentGeneration, setGenerations, notify]);
 
   // Backup real-time listener for texture application (TEMPORARILY DISABLED to fix infinite loop)
   // TODO: Re-enable this after fixing the polling system conflicts

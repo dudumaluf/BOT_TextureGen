@@ -42,12 +42,25 @@ export default function LoadingOverlay({ isQueueOpen = false }: LoadingOverlayPr
     let progressInterval: NodeJS.Timeout;
     
     if (isLoading) {
+      // Reset progress to 0 when starting new loading
       setProgress(0);
+      
       progressInterval = setInterval(() => {
         setProgress(prev => {
           // Simulate realistic progress: fast start, slow middle, fast end
-          const newProgress = Math.min(prev + Math.random() * 2 + 0.5, 95);
-          return newProgress;
+          if (prev < 30) {
+            // Fast start: 0-30% in first 30 seconds
+            return Math.min(prev + Math.random() * 3 + 1, 30);
+          } else if (prev < 70) {
+            // Slow middle: 30-70% over next 60 seconds
+            return Math.min(prev + Math.random() * 1 + 0.3, 70);
+          } else if (prev < 95) {
+            // Steady progress: 70-95% over remaining time
+            return Math.min(prev + Math.random() * 1 + 0.5, 95);
+          } else {
+            // Stay at 95% until actually complete
+            return 95;
+          }
         });
       }, 1000);
     } else {
