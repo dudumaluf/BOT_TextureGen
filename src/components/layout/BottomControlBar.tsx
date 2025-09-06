@@ -185,7 +185,11 @@ export default function BottomControlBar() {
               setLastProcessedTexture(textureData.diffuse);
               
               // Mark this generation as processed to prevent duplicate processing
-              setCompletedGenerationsSet(prev => new Set([...prev, latestTextureGeneration.id]));
+              setCompletedGenerationsSet(prev => {
+                const newSet = new Set(prev);
+                newSet.add(latestTextureGeneration.id);
+                return newSet;
+              });
               
               // Create or update generation pair
               const generationPair = {
@@ -368,7 +372,11 @@ export default function BottomControlBar() {
   useEffect(() => {
     if (currentGenerationId && !activeGenerations.has(currentGenerationId)) {
       console.log(`Multi-Gen: Adding generation ${currentGenerationId} to active tracking`);
-      setActiveGenerations(prev => new Set([...prev, currentGenerationId]));
+      setActiveGenerations(prev => {
+        const newSet = new Set(prev);
+        newSet.add(currentGenerationId);
+        return newSet;
+      });
     }
   }, [currentGenerationId]); // Remove activeGenerations from dependencies to prevent infinite loop
 
