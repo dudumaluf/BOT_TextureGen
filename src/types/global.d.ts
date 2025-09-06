@@ -34,6 +34,7 @@ export interface AppNotificationEvent extends CustomEvent {
     message: string;
     duration?: number;
     type?: 'info' | 'success' | 'error' | 'warning';
+    generationId?: string;
   };
 }
 

@@ -519,6 +519,16 @@ export default function BottomControlBar() {
           isLoading, 
           willTriggerPolling: isLoading && result.generationId 
         });
+        
+        // Dispatch event to reset progress bar for new generation
+        const newGenerationEvent = new CustomEvent('app-notification', {
+          detail: { 
+            message: 'Processing', 
+            generationId: result.generationId,
+            duration: 0 // Don't show as temporary message
+          }
+        });
+        window.dispatchEvent(newGenerationEvent);
       } else {
         throw new Error(result.error || 'Failed to start generation.');
       }

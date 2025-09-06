@@ -7,13 +7,14 @@ export interface NotificationOptions {
   message: string;
   duration?: number; // Duration in milliseconds, default 3000
   type?: 'info' | 'success' | 'error' | 'warning';
+  generationId?: string; // Optional generation ID for progress reset
 }
 
 /**
  * Show a notification in the centralized processing indicator
  */
 export function showNotification(options: NotificationOptions) {
-  const { message, duration = 3000, type = 'info' } = options;
+  const { message, duration = 3000, type = 'info', generationId } = options;
   
   // Add type prefix for different notification types
   let prefixedMessage = message;
@@ -38,7 +39,8 @@ export function showNotification(options: NotificationOptions) {
     detail: {
       message: prefixedMessage,
       duration,
-      type
+      type,
+      generationId
     }
   });
   

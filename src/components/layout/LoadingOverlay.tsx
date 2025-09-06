@@ -13,11 +13,19 @@ export default function LoadingOverlay({ isQueueOpen = false }: LoadingOverlayPr
   const [currentMessage, setCurrentMessage] = useState("Processing");
   const [showTemporaryMessage, setShowTemporaryMessage] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [lastGenerationId, setLastGenerationId] = useState<string | null>(null);
 
   // Listen for custom notification events
   useEffect(() => {
     const handleNotification = (event: CustomEvent) => {
-      const { message, duration = 3000 } = event.detail;
+      const { message, duration = 3000, generationId } = event.detail;
+      
+      // If this is a new generation starting, reset progress
+      if (generationId && generationId !== lastGenerationId) {
+        console.log(`LoadingOverlay: New generation detected ${generationId}, resetting progress`);
+        setProgress(0);
+        setLastGenerationId(generationId);
+      }
       
       // Show temporary message
       setCurrentMessage(message);
@@ -35,7 +43,7 @@ export default function LoadingOverlay({ isQueueOpen = false }: LoadingOverlayPr
     return () => {
       window.removeEventListener('app-notification', handleNotification as EventListener);
     };
-  }, []);
+  }, [lastGenerationId]);
 
   // Progress simulation when loading
   useEffect(() => {
